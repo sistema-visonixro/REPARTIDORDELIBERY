@@ -33,6 +33,7 @@ import GestionPlatillos from "./pages/restaurante/GestionPlatillos";
 import PedidosRestaurante from "./pages/restaurante/PedidosRestaurante";
 
 import "./App.css";
+import BottomNav from "./components/BottomNav";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { usuario } = useAuth();
@@ -267,6 +268,7 @@ function App() {
       <ThemeProvider>
         <AuthProvider>
           <AppRoutes />
+          <BottomNav />
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

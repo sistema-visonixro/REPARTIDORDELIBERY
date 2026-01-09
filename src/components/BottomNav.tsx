@@ -12,6 +12,8 @@ export default function BottomNav() {
   const navItems = [
     { label: "Inicio", icon: "🏠", path: "/home" },
     { label: "Restaurantes", icon: "🍽️", path: "/restaurantes" },
+    { label: "Platillos", icon: "🍛", path: "/categorias" },
+    { label: "Restaurante", icon: "🏬", path: "/restaurantes" },
     { label: "Carrito", icon: "🛒", path: "/carrito" },
     { label: "Pedidos", icon: "📦", path: "/pedidos" },
     { label: "Mi Cuenta", icon: "👤", path: "/mi-cuenta" },
