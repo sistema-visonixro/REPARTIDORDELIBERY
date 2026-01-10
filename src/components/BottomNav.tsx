@@ -1,247 +1,365 @@
-import { useNavigate, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Fragment, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { Dialog, Transition } from "@headlessui/react";
 
-export default function BottomNav() {
+export default function BentoNav() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { logout } = useAuth();
+  const [isOpen, setIsOpen] = useState(false);
+  const { logout, usuario } = useAuth();
 
-  const navItems = [
-    { label: "Inicio", icon: "🏠", path: "/home" },
-    { label: "Restaurantes", icon: "🍽️", path: "/restaurantes" },
-    { label: "Platillos", icon: "🍛", path: "/categorias" },
-    { label: "Restaurante", icon: "🏬", path: "/restaurantes" },
-    { label: "Carrito", icon: "🛒", path: "/carrito" },
-    { label: "Pedidos", icon: "📦", path: "/pedidos" },
-    { label: "Mi Cuenta", icon: "👤", path: "/mi-cuenta" },
-  ];
-
-  const [_selectedIndex, setSelectedIndex] = useState(() => {
-    const idx = navItems.findIndex((i) => i.path === location.pathname);
-    return idx >= 0 ? idx : 0;
-  });
-
-  useEffect(() => {
-    const idx = navItems.findIndex((i) => i.path === location.pathname);
-    if (idx >= 0) setSelectedIndex(idx);
-  }, [location.pathname]);
-
-  const handleMenuItemClick = (path: string, idx: number) => {
-    setSelectedIndex(idx);
-    setIsMenuOpen(false);
+  const handleAction = (path: string) => {
+    setIsOpen(false);
     navigate(path);
   };
 
   return (
     <>
-      {/* Botón hamburguesa flotante */}
-      <motion.button
-        whileTap={{ scale: 0.9 }}
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        style={styles.hamburgerButton as any}
-      >
-        <motion.div
-          animate={{
-            rotate: isMenuOpen ? 45 : 0,
-            y: isMenuOpen ? 8 : 0,
-          }}
-          transition={{ duration: 0.3 }}
-          style={styles.hamburgerLine as any}
-        />
-        <motion.div
-          animate={{
-            opacity: isMenuOpen ? 0 : 1,
-          }}
-          transition={{ duration: 0.2 }}
-          style={styles.hamburgerLine as any}
-        />
-        <motion.div
-          animate={{
-            rotate: isMenuOpen ? -45 : 0,
-            y: isMenuOpen ? -8 : 0,
-          }}
-          transition={{ duration: 0.3 }}
-          style={styles.hamburgerLine as any}
-        />
-      </motion.button>
-
-      {/* Overlay oscuro cuando el menú está abierto */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsMenuOpen(false)}
-            style={styles.overlay as any}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Menú desplegable */}
-      <AnimatePresence>
-        {isMenuOpen && (
-          <motion.nav
-            initial={{ x: "-100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "-100%" }}
-            transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            style={styles.menuContainer as any}
+      {/* Botón Flotante Estilo Cápsula */}
+      <div style={dockContainer}>
+        <motion.button
+          layoutId="nav-pill"
+          whileTap={{ scale: 0.95 }}
+          onClick={() => setIsOpen(true)}
+          style={mainButtonStyle}
+        >
+          <div style={burgerWrapper}>
+            <span style={dotStyle} />
+            <span style={dotStyle} />
+          </div>
+          <span
+            style={{
+              fontWeight: 800,
+              fontSize: "13px",
+              letterSpacing: "0.5px",
+            }}
           >
-            <div style={styles.menuHeader as any}>
-              <h2 style={styles.menuTitle as any}>Menú</h2>
-            </div>
+            Menu
+          </span>
+        </motion.button>
+      </div>
 
-            <div style={styles.menuItems as any}>
-              {navItems.map((item, idx) => (
-                <motion.button
-                  key={item.path}
-                  onClick={() => handleMenuItemClick(item.path, idx)}
-                  whileHover={{ scale: 1.02, x: 4 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    ...styles.menuItem,
-                    background:
-                      location.pathname === item.path
-                        ? "linear-gradient(135deg, #4f46e5, #7c3aed)"
-                        : "transparent",
-                    color: location.pathname === item.path ? "#fff" : "#1f2937",
-                  } as any}
-                >
-                  <span style={styles.menuItemIcon as any}>{item.icon}</span>
-                  <span style={styles.menuItemLabel as any}>{item.label}</span>
-                  {location.pathname === item.path && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      style={styles.activeIndicator as any}
-                    />
-                  )}
-                </motion.button>
-              ))}
-              
-              <div style={{ height: "1px", background: "#e5e7eb", margin: "12px 0" }} />
-              
-              <motion.button
-                onClick={() => {
-                  logout();
-                  navigate("/");
-                  setIsMenuOpen(false);
-                }}
-                whileHover={{ scale: 1.02, x: 4 }}
-                whileTap={{ scale: 0.98 }}
-                style={{
-                  ...styles.menuItem,
-                  background: "transparent",
-                  color: "#ef4444",
-                } as any}
-              >
-                <span style={styles.menuItemIcon as any}>🚪</span>
-                <span style={styles.menuItemLabel as any}>Cerrar Sesión</span>
-              </motion.button>
-            </div>
-          </motion.nav>
-        )}
-      </AnimatePresence>
+      <Transition show={isOpen} as={Fragment}>
+        <Dialog as="div" onClose={() => setIsOpen(false)} style={modalIndex}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div style={backdropStyle} />
+          </Transition.Child>
+
+          <div style={sheetWrapper}>
+            <Transition.Child
+              as={Fragment}
+              enter="transform transition ease-in-out duration-400"
+              enterFrom="translate-y-full"
+              enterTo="translate-y-0"
+              leave="transform transition ease-in-out duration-300"
+              leaveFrom="translate-y-0"
+              leaveTo="translate-y-full"
+            >
+              <Dialog.Panel style={bentoSheet}>
+                {/* Pull Indicator */}
+                <div style={handleBar} />
+
+                {/* User Profile Glass Card */}
+                <div style={userCard}>
+                  <div style={avatarHex}>
+                    {usuario?.email?.[0].toUpperCase()}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={userWelcome}>Hola,</p>
+                    <h4 style={userName}>{usuario?.email?.split("@")[0]}</h4>
+                  </div>
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsOpen(false);
+                    }}
+                    style={exitBtn}
+                  >
+                    Cerrar Sesión
+                  </button>
+                </div>
+
+                {/* Bento Grid 2.0 */}
+                <div style={bentoGrid}>
+                  {/* Item Grande: Home */}
+                  <button
+                    onClick={() => handleAction("/home")}
+                    style={{
+                      ...gridItem,
+                      gridColumn: "span 2",
+                      background: "#c0c9d8ff",
+                      color: "#fff",
+                    }}
+                  >
+                    <div style={iconBoxDark}>🏠</div>
+                    <div>
+                      <span style={{ ...gridLabel, color: "#fff" }}>
+                       Inicio
+                      </span>
+                 
+                    </div>
+                  </button>
+
+                  {/* Items Medianos */}
+                  <button
+                    onClick={() => handleAction("/restaurantes")}
+                    style={{ ...gridItem, border: "1px solid #e2e8f0" }}
+                  >
+                    <span style={iconCircle}>🍽️</span>
+                    <span style={gridLabel}>Locales</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleAction("/comidas")}
+                    style={{ ...gridItem, border: "1px solid #e2e8f0" }}
+                  >
+                    <span style={iconCircle}>🍛</span>
+                    <span style={gridLabel}>Menú</span>
+                  </button>
+
+                  {/* Item Largo: Pedidos */}
+                  <button
+                    onClick={() => handleAction("/pedidos")}
+                    style={{
+                      ...gridItem,
+                      gridColumn: "span 2",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      background: "#f8fafc",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "15px",
+                      }}
+                    >
+                      <span style={iconCircle}>📦</span>
+                      <div style={{ textAlign: "left" }}>
+                        <span style={gridLabel}>Mis Pedidos</span>
+                        <p style={gridSub}>Rastreo en tiempo real</p>
+                      </div>
+                    </div>
+                    <span style={arrowIcon}>→</span>
+                  </button>
+
+                  {/* Items Pequeños Finales */}
+                  <button
+                    onClick={() => handleAction("/carrito")}
+                    style={{
+                      ...gridItem,
+                      background: "#f0fdf4",
+                      border: "1px solid #dcfce7",
+                    }}
+                  >
+                    <span style={iconCircle}>🛒</span>
+                    <span style={gridLabel}>Carrito</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleAction("/mi-cuenta")}
+                    style={{
+                      ...gridItem,
+                      background: "#fff",
+                      border: "1px solid #e2e8f0",
+                    }}
+                  >
+                    <span style={iconCircle}>👤</span>
+                    <span style={gridLabel}>Perfil</span>
+                  </button>
+                </div>
+              </Dialog.Panel>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
     </>
   );
 }
-const styles = {
-  hamburgerButton: {
-    position: "fixed",
-    bottom: "24px",
-    right: "24px",
-    width: "56px",
-    height: "56px",
-    borderRadius: "50%",
-    background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
-    border: "none",
-    cursor: "pointer",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "5px",
-    zIndex: 1000,
-    boxShadow: "0 8px 24px rgba(79, 70, 229, 0.4)",
-  },
-  hamburgerLine: {
-    width: "24px",
-    height: "3px",
-    backgroundColor: "#fff",
-    borderRadius: "2px",
-  },
-  overlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    zIndex: 998,
-  },
-  menuContainer: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    bottom: 0,
-    width: "280px",
-    maxWidth: "80vw",
-    backgroundColor: "#ffffff",
-    boxShadow: "4px 0 24px rgba(0, 0, 0, 0.15)",
-    zIndex: 999,
-    display: "flex",
-    flexDirection: "column",
-  },
-  menuHeader: {
-    padding: "24px 20px",
-    borderBottom: "1px solid #e5e7eb",
-    background: "linear-gradient(135deg, #4f46e5, #7c3aed)",
-  },
-  menuTitle: {
-    margin: 0,
-    fontSize: "24px",
-    fontWeight: 700,
-    color: "#fff",
-  },
-  menuItems: {
-    flex: 1,
-    padding: "16px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    overflowY: "auto",
-  },
-  menuItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "16px",
-    padding: "16px 20px",
-    border: "none",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontSize: "16px",
-    fontWeight: 500,
-    transition: "all 0.2s ease",
-    position: "relative",
-    textAlign: "left",
-  },
-  menuItemIcon: {
-    fontSize: "24px",
-  },
-  menuItemLabel: {
-    flex: 1,
-  },
-  activeIndicator: {
-    position: "absolute",
-    left: 0,
-    top: "50%",
-    transform: "translateY(-50%)",
-    width: "4px",
-    height: "24px",
-    backgroundColor: "#fff",
-    borderRadius: "0 4px 4px 0",
-  },
+
+// --- Estilos Rediseñados ---
+
+const modalIndex: React.CSSProperties = {
+  zIndex: 2000,
+  position: "fixed",
+  inset: 0,
+};
+
+const dockContainer: React.CSSProperties = {
+  position: "fixed",
+  bottom: "30px",
+  left: "50%",
+  transform: "translateX(-50%)",
+  zIndex: 100,
+};
+
+const mainButtonStyle: React.CSSProperties = {
+  background: "#0f172a",
+  color: "white",
+  border: "none",
+  padding: "14px 28px",
+  borderRadius: "100px",
+  display: "flex",
+  alignItems: "center",
+  gap: "12px",
+  boxShadow: "0 15px 30px -5px rgba(15, 23, 42, 0.4)",
+  cursor: "pointer",
+};
+
+const burgerWrapper: React.CSSProperties = { display: "flex", gap: "4px" };
+const dotStyle: React.CSSProperties = {
+  width: "6px",
+  height: "6px",
+  background: "#6366f1",
+  borderRadius: "50%",
+};
+
+const backdropStyle: React.CSSProperties = {
+  position: "fixed",
+  inset: 0,
+  background: "rgba(15, 23, 42, 0.6)",
+  backdropFilter: "blur(8px)",
+};
+
+const sheetWrapper: React.CSSProperties = {
+  position: "fixed",
+  bottom: 0,
+  left: 0,
+  right: 0,
+  display: "flex",
+  justifyContent: "center",
+};
+
+const bentoSheet: React.CSSProperties = {
+  background: "#ffffff",
+  width: "100%",
+  maxWidth: "480px",
+  borderRadius: "40px 40px 0 0",
+  padding: "24px 24px 40px",
+  boxShadow: "0 -20px 50px rgba(0,0,0,0.2)",
+  border: "1px solid rgba(255,255,255,0.3)",
+};
+
+const handleBar: React.CSSProperties = {
+  width: "50px",
+  height: "5px",
+  background: "#e2e8f0",
+  borderRadius: "10px",
+  margin: "0 auto 30px",
+};
+
+const userCard: React.CSSProperties = {
+  display: "flex",
+  alignItems: "center",
+  gap: "16px",
+  padding: "20px",
+  background: "#f8fafc",
+  borderRadius: "24px",
+  marginBottom: "20px",
+  border: "1px solid #f1f5f9",
+};
+
+const avatarHex: React.CSSProperties = {
+  width: "50px",
+  height: "50px",
+  background: "linear-gradient(135deg, #6366f1, #a855f7)",
+  borderRadius: "16px",
+  color: "white",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontWeight: 900,
+  fontSize: "20px",
+  boxShadow: "0 8px 15px rgba(99, 102, 241, 0.3)",
+};
+
+const userWelcome: React.CSSProperties = {
+  margin: 0,
+  fontSize: "12px",
+  color: "#64748b",
+  fontWeight: 600,
+};
+const userName: React.CSSProperties = {
+  margin: 0,
+  fontSize: "18px",
+  color: "#1e293b",
+  fontWeight: 800,
+};
+
+const exitBtn: React.CSSProperties = {
+  background: "white",
+  border: "1px solid #fee2e2",
+  color: "#ef4444",
+  padding: "8px 12px",
+  borderRadius: "12px",
+  fontSize: "12px",
+  fontWeight: 700,
+  cursor: "pointer",
+};
+
+const bentoGrid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "1fr 1fr",
+  gap: "12px",
+};
+
+const gridItem: React.CSSProperties = {
+  border: "none",
+  borderRadius: "28px",
+  padding: "24px",
+  cursor: "pointer",
+  display: "flex",
+  flexDirection: "column",
+  gap: "12px",
+  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+};
+
+const iconCircle: React.CSSProperties = {
+  width: "44px",
+  height: "44px",
+  background: "#f8fafc",
+  borderRadius: "14px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "20px",
+};
+
+const iconBoxDark: React.CSSProperties = {
+  width: "44px",
+  height: "44px",
+  background: "rgba(255,255,255,0.1)",
+  borderRadius: "14px",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontSize: "20px",
+};
+
+const gridLabel: React.CSSProperties = {
+  fontWeight: 800,
+  fontSize: "15px",
+  color: "#0f172a",
+};
+const gridSub: React.CSSProperties = {
+  margin: 0,
+  fontSize: "11px",
+  opacity: 0.7,
+  fontWeight: 500,
+};
+const arrowIcon: React.CSSProperties = {
+  fontSize: "18px",
+  opacity: 0.3,
+  fontWeight: "bold",
 };

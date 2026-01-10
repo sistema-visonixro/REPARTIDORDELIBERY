@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import BackButton from "../components/BackButton";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
@@ -9,153 +10,89 @@ interface Platillo {
   imagen_url?: string;
   precio: number;
   disponible: boolean;
-  restaurante_id: string;
-  restaurante?: { id: string; nombre: string } | null;
+  restaurante?: { nombre: string };
 }
 
-export default function Platillos() {
+export default function PlatillosPorCategoria() {
   const { categoriaId } = useParams();
   const navigate = useNavigate();
   const [platillos, setPlatillos] = useState<Platillo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [categoriaNombre, setCategoriaNombre] = useState<string | null>(null);
+  const [categoriaNombre, setCategoriaNombre] = useState("");
 
   useEffect(() => {
-    if (!categoriaId) return;
-    async function cargarPlatillos() {
-      setLoading(true);
-      try {
-        // Obtener nombre de la categoría (opcional)
-        const { data: catData } = await supabase
-          .from("categorias")
-          .select("nombre")
-          .eq("id", categoriaId)
-          .single();
-        if (catData) setCategoriaNombre(catData.nombre || null);
-
-        // Traer platillos y nombre del restaurante asociado
-        const { data, error } = await supabase
-          .from("platillos")
-          .select(
-            `id,nombre,descripcion,imagen_url,precio,disponible,restaurante_id, restaurantes(id,nombre)`
-          )
-          .eq("categoria_id", categoriaId)
-          .order("nombre", { ascending: true });
-
-        if (error) {
-          console.error("Error cargando platillos:", error);
-          setPlatillos([]);
-        } else {
-          // Mapear para asegurar shape
-          const mapped = (data || []).map((p: any) => ({
-            id: p.id,
-            nombre: p.nombre,
-            descripcion: p.descripcion,
-            imagen_url: p.imagen_url,
-            precio: p.precio,
-            disponible: p.disponible,
-            restaurante_id: p.restaurante_id,
-            restaurante: p.restaurantes
-              ? { id: p.restaurantes.id, nombre: p.restaurantes.nombre }
-              : null,
-          }));
-          setPlatillos(mapped);
-        }
-      } catch (err) {
-        console.error(err);
-        setPlatillos([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    cargarPlatillos();
+    if (categoriaId) cargarDatos();
   }, [categoriaId]);
 
-  return (
-    <div style={{ padding: 16, maxWidth: 500, margin: "0 auto" }}>
-      <button onClick={() => navigate(-1)} style={{ marginBottom: 12 }}>
-        ← Volver
-      </button>
+  async function cargarDatos() {
+    setLoading(true);
+    try {
+      // 1. Nombre de categoría
+      const { data: cat } = await supabase.from("categorias").select("nombre").eq("id", categoriaId).single();
+      if (cat) setCategoriaNombre(cat.nombre);
 
-      <h2 style={{ fontSize: 20, marginBottom: 8 }}>
-        {categoriaNombre ?? "Platillos"}
-      </h2>
+      // 2. Platillos con JOIN a restaurantes
+      const { data, error } = await supabase
+        .from("platillos")
+        .select(`
+          id, nombre, descripcion, imagen_url, precio, disponible,
+          restaurantes ( nombre )
+        `)
+        .eq("categoria_id", categoriaId)
+        .eq("disponible", true);
+
+      if (error) throw error;
+
+      // Normalizar datos para que coincidan con la interfaz
+      const formateados = (data || []).map((p: any) => ({
+        ...p,
+        restaurante: p.restaurantes
+      }));
+
+      setPlatillos(formateados);
+    } catch (err) {
+      console.error("Error:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div style={pageContainer}>
+      {/* Botón flotante para volver */}
+      <BackButton onClick={() => navigate(-1)} style={{ top: 20, right: 20 }} />
+
+      {/* Header Minimalista */}
+      <header style={headerStyle}>
+        <span style={subtitleStyle}>Explorar categoría</span>
+        <h1 style={titleStyle}>{categoriaNombre || "Cargando..." }</h1>
+      </header>
 
       {loading ? (
-        <p>Cargando platillos...</p>
+        <div style={center}>Cargando delicias...</div>
       ) : platillos.length === 0 ? (
-        <p>No hay platillos disponibles para esta categoría.</p>
+        <div style={center}>No hay platillos en esta categoría todavía.</div>
       ) : (
-        <div style={{ display: "grid", gap: 12 }}>
+        <div style={gridStyle}>
           {platillos.map((p) => (
-            <div
-              key={p.id}
-              role="button"
-              tabIndex={0}
-              onClick={() => navigate(`/platillo/${p.id}`)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ")
-                  navigate(`/platillo/${p.id}`);
-              }}
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                background: "#fff",
-                borderRadius: 12,
-                padding: 12,
-                boxShadow: "0 6px 20px rgba(0,0,0,0.06)",
-                cursor: "pointer",
-              }}
+            <div 
+              key={p.id} 
+              onClick={() => navigate(`/platillo/${p.id}`)} 
+              style={cardStyle}
             >
-              <div
-                style={{
-                  width: 84,
-                  height: 84,
-                  borderRadius: 8,
-                  overflow: "hidden",
-                  flex: "0 0 84px",
-                }}
-              >
-                <img
-                  src={p.imagen_url || "/placeholder.png"}
-                  alt={p.nombre}
-                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              <div style={imageContainer}>
+                <img 
+                  src={p.imagen_url || "https://via.placeholder.com/300"} 
+                  alt={p.nombre} 
+                  style={imgStyle} 
                 />
+                <div style={priceBadge}>${Number(p.precio).toFixed(2)}</div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <h3 style={{ fontSize: 16, margin: 0 }}>{p.nombre}</h3>
-                  <div style={{ fontWeight: 700 }}>${p.precio.toFixed(2)}</div>
-                </div>
-                <p
-                  style={{
-                    margin: "6px 0 0 0",
-                    color: "#6b7280",
-                    fontSize: 13,
-                  }}
-                >
-                  {p.descripcion}
-                </p>
-                {p.restaurante && (
-                  <p
-                    style={{
-                      margin: "6px 0 0 0",
-                      fontSize: 12,
-                      color: "#374151",
-                    }}
-                  >
-                    En: {p.restaurante.nombre}
-                  </p>
-                )}
+              
+              <div style={cardContent}>
+                <div style={restName}>{p.restaurante?.nombre || "Restaurante"}</div>
+                <h3 style={dishName}>{p.nombre}</h3>
+                <p style={dishDesc}>{p.descripcion}</p>
               </div>
             </div>
           ))}
@@ -164,3 +101,106 @@ export default function Platillos() {
     </div>
   );
 }
+
+// --- Estilos en Objeto JS (Garantiza que funcionen de inmediato) ---
+
+const pageContainer: React.CSSProperties = {
+  minHeight: "100vh",
+  background: "#f2f2f7", // Color gris claro estilo iOS
+  padding: "20px",
+  paddingTop: "60px"
+};
+
+/* floatingBackBtn removed; using BackButton component */
+
+const headerStyle: React.CSSProperties = {
+  marginBottom: "30px",
+  paddingLeft: "10px"
+};
+
+const subtitleStyle: React.CSSProperties = {
+  color: "#8e8e93",
+  textTransform: "uppercase",
+  fontSize: "12px",
+  fontWeight: 600,
+  letterSpacing: "1px"
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: "34px",
+  fontWeight: 800,
+  color: "#1c1c1e",
+  margin: "5px 0 0 0"
+};
+
+const gridStyle: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+  gap: "20px"
+};
+
+const cardStyle: React.CSSProperties = {
+  background: "white",
+  borderRadius: "20px",
+  overflow: "hidden",
+  boxShadow: "0 10px 20px rgba(0,0,0,0.05)",
+  cursor: "pointer",
+  transition: "transform 0.2s ease"
+};
+
+const imageContainer: React.CSSProperties = {
+  position: "relative",
+  height: "200px",
+  width: "100%"
+};
+
+const imgStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover"
+};
+
+const priceBadge: React.CSSProperties = {
+  position: "absolute",
+  bottom: "15px",
+  left: "15px",
+  background: "rgba(255,255,255,0.9)",
+  padding: "5px 12px",
+  borderRadius: "10px",
+  fontWeight: 800,
+  fontSize: "14px",
+  color: "#000",
+  backdropFilter: "blur(5px)"
+};
+
+const cardContent: React.CSSProperties = {
+  padding: "15px"
+};
+
+const restName: React.CSSProperties = {
+  color: "#007aff",
+  fontSize: "12px",
+  fontWeight: 700,
+  marginBottom: "4px"
+};
+
+const dishName: React.CSSProperties = {
+  fontSize: "18px",
+  fontWeight: 700,
+  margin: "0 0 8px 0",
+  color: "#1c1c1e"
+};
+
+const dishDesc: React.CSSProperties = {
+  fontSize: "14px",
+  color: "#636366",
+  lineHeight: "1.4",
+  margin: 0
+};
+
+const center: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "center",
+  padding: "50px",
+  color: "#8e8e93"
+};

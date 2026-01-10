@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+import SuccessToast from "../components/SuccessToast";
+import ConfirmModal from "../components/ConfirmModal";
+import BackButton from "../components/BackButton";
 
+// --- Interfaces ---
 interface Restaurante {
   id: string;
   nombre: string;
   descripcion: string;
   imagen_url: string;
-  color_tema: string;
-  emoji: string;
   calificacion: number;
   tiempo_entrega_min: number;
   costo_envio: number;
@@ -21,51 +24,43 @@ interface Platillo {
   imagen_url?: string;
   precio: number;
   disponible: boolean;
-  categoria_id?: string;
 }
 
 export default function RestauranteDetalle() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { usuario } = useAuth();
+
   const [restaurante, setRestaurante] = useState<Restaurante | null>(null);
   const [platillos, setPlatillos] = useState<Platillo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdding, setIsAdding] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingPlatillo, setPendingPlatillo] = useState<Platillo | null>(null);
 
   useEffect(() => {
-    if (!id) return;
-    cargarDatos();
+    if (id) cargarDatos();
   }, [id]);
 
   async function cargarDatos() {
+    setLoading(true);
     try {
-      // Cargar restaurante
-      const { data: restData, error: restError } = await supabase
+      const { data: restData } = await supabase
         .from("restaurantes")
         .select("*")
         .eq("id", id)
         .single();
+      setRestaurante(restData);
 
-      if (restError) {
-        console.error("Error cargando restaurante:", restError);
-        setRestaurante(null);
-      } else {
-        setRestaurante(restData);
-      }
-
-      // Cargar platillos del restaurante
-      const { data: platData, error: platError } = await supabase
+      const { data: platData } = await supabase
         .from("platillos")
         .select("*")
         .eq("restaurante_id", id)
         .eq("disponible", true)
-        .order("nombre", { ascending: true });
+        .order("nombre");
 
-      if (platError) {
-        console.error("Error cargando platillos:", platError);
-        setPlatillos([]);
-      } else {
-        setPlatillos(platData || []);
-      }
+      setPlatillos(platData || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -73,235 +68,401 @@ export default function RestauranteDetalle() {
     }
   }
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 48 }}>⏳</div>
-          <p style={{ color: "#6b7280", marginTop: 12 }}>Cargando...</p>
-        </div>
-      </div>
-    );
+  const agregarAlCarrito = async (e: React.MouseEvent, platillo: Platillo) => {
+    e.stopPropagation();
+    if (!usuario) {
+      navigate("/login");
+      return;
+    }
+
+    setIsAdding(platillo.id);
+    try {
+      const userId = (usuario as any).id;
+      const restauranteId = id;
+
+      // Verificar si el carrito tiene items de otro restaurante
+      if (restauranteId) {
+        const { data: conflict, error: conflictErr } = await supabase
+          .from("carrito")
+          .select("id,restaurante_id")
+          .eq("usuario_id", userId)
+          .neq("restaurante_id", restauranteId)
+          .limit(1)
+          .maybeSingle();
+
+        if (conflictErr) throw conflictErr;
+
+        if (conflict) {
+          // Mostrar modal de confirmación en vez de window.confirm
+          setPendingPlatillo(platillo);
+          setShowConfirm(true);
+          setIsAdding(null);
+          return;
+        }
+      }
+      await doAdd(platillo);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAdding(null);
+    }
+  };
+
+  async function doAdd(platillo: Platillo) {
+    if (!usuario) return;
+    try {
+      const userId = (usuario as any).id;
+      const { data: existing } = await supabase
+        .from("carrito")
+        .select("id, cantidad")
+        .eq("usuario_id", userId)
+        .eq("platillo_id", platillo.id)
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from("carrito")
+          .update({ cantidad: existing.cantidad + 1 })
+          .eq("id", existing.id);
+      } else {
+        await supabase.from("carrito").insert({
+          usuario_id: userId,
+          platillo_id: platillo.id,
+          restaurante_id: id,
+          cantidad: 1,
+          precio_unitario: platillo.precio,
+        });
+      }
+      setShowSuccess(true);
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
   }
 
-  if (!restaurante) {
-    return (
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          minHeight: "100vh",
-          flexDirection: "column",
-          gap: 16,
-        }}
-      >
-        <div style={{ fontSize: 48 }}>😞</div>
-        <p style={{ color: "#6b7280" }}>Restaurante no encontrado</p>
-        <button
-          onClick={() => navigate("/restaurantes")}
-          style={{
-            padding: "10px 20px",
-            borderRadius: 8,
-            border: "none",
-            background: "#4f46e5",
-            color: "#fff",
-            cursor: "pointer",
-          }}
-        >
-          Ver restaurantes
-        </button>
-      </div>
-    );
+  async function handleConfirmClearAndAdd() {
+    setShowConfirm(false);
+    if (!pendingPlatillo) return;
+    setIsAdding(pendingPlatillo.id);
+    try {
+      const userId = (usuario as any).id;
+      const { error: delErr } = await supabase
+        .from("carrito")
+        .delete()
+        .eq("usuario_id", userId);
+      if (delErr) throw delErr;
+      await doAdd(pendingPlatillo);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsAdding(null);
+      setPendingPlatillo(null);
+    }
   }
+
+  if (loading) return <Loader />;
+  if (!restaurante) return <NotFound navigate={navigate} />;
 
   return (
     <div
-      style={{ minHeight: "100vh", background: "#fafafa", paddingBottom: 80 }}
+      style={{
+        minHeight: "100vh",
+        background: "#ffffff",
+        paddingBottom: "100px",
+      }}
     >
-      {/* Header con imagen */}
-      <div style={{ position: "relative" }}>
+      {/* Hero Section Moderno */}
+      <div style={heroContainer}>
         <div
           style={{
-            height: 220,
+            ...heroImage,
             backgroundImage: `url(${restaurante.imagen_url})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
           }}
         />
-        <button
+        <div style={heroOverlay} />
+
+        <BackButton
           onClick={() => navigate(-1)}
-          style={{
-            position: "absolute",
-            top: 16,
-            left: 16,
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            border: "none",
-            background: "rgba(255,255,255,0.95)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 18,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
-          }}
-        >
-          ←
-        </button>
+          style={{ top: 25, left: 20 }}
+        />
+
+        <div style={heroContent}>
+          <div style={headerBadge}>Populares hoy</div>
+          <h1 style={titleStyle}>{restaurante.nombre}</h1>
+          <div style={metaRow}>
+            <span>⭐ {restaurante.calificacion.toFixed(1)}</span>
+            <span>•</span>
+            <span>{restaurante.tiempo_entrega_min} min</span>
+            <span>•</span>
+            <span>Envío ${restaurante.costo_envio}</span>
+          </div>
+        </div>
       </div>
 
-      {/* Info del restaurante */}
+      {/* Grid de Menú: Sistema de "Bento Tiles" */}
+      <main style={mainContent}>
+        <div style={sectionHeader}>
+          <h2 style={{ fontSize: "22px", fontWeight: 800 }}>Nuestro Menú</h2>
+          <span style={{ color: "#000000ff", fontSize: "14px" }}>
+            {platillos.length} opciones
+          </span>
+        </div>
+
+        <div style={bentoGrid}>
+          {platillos.map((p) => (
+            <div
+              key={p.id}
+              style={tileStyle}
+              onClick={() => navigate(`/platillo/${p.id}`)}
+            >
+              <div style={tileImageContainer}>
+                <img
+                  src={p.imagen_url || "/placeholder.png"}
+                  alt={p.nombre}
+                  style={tileImage}
+                />
+                <div style={priceTag}>${p.precio.toFixed(2)}</div>
+              </div>
+
+              <div style={tileBody}>
+                <h3 style={tileTitle}>{p.nombre}</h3>
+                <p style={tileDesc}>{p.descripcion}</p>
+
+                <button
+                  disabled={isAdding === p.id}
+                  onClick={(e) => agregarAlCarrito(e, p)}
+                  style={{
+                    ...addBtnStyle,
+                    background: isAdding === p.id ? "#ecfdf5" : "#10b981",
+                    color: isAdding === p.id ? "#10b981" : "#fff",
+                  }}
+                >
+                  {isAdding === p.id ? "..." : "+ Añadir"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+      <ConfirmModal
+        visible={showConfirm}
+        title="Carrito contiene items de otro restaurante"
+        description="Tu carrito contiene productos de otro restaurante. ¿Deseas vaciar el carrito y agregar este platillo?"
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={handleConfirmClearAndAdd}
+        confirmLabel="Vaciar y agregar"
+        cancelLabel="Cancelar"
+      />
+
+      <SuccessToast
+        visible={showSuccess}
+        message="Añadido al carrito"
+        onClose={() => setShowSuccess(false)}
+      />
+    </div>
+  );
+}
+
+// --- Estilos ---
+
+const heroContainer: React.CSSProperties = {
+  position: "relative",
+  height: "40vh",
+  width: "100%",
+  overflow: "hidden",
+  display: "flex",
+  alignItems: "flex-end",
+};
+
+const heroImage: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  transform: "scale(1.1)",
+};
+
+const heroOverlay: React.CSSProperties = {
+  position: "absolute",
+  inset: 0,
+  background: "linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)",
+};
+
+const heroContent: React.CSSProperties = {
+  position: "relative",
+  padding: "30px",
+  color: "white",
+  width: "100%",
+};
+
+const headerBadge: React.CSSProperties = {
+  background: "#fbbf24",
+  color: "#000",
+  padding: "4px 12px",
+  borderRadius: "20px",
+  fontSize: "12px",
+  fontWeight: 800,
+  textTransform: "uppercase",
+  width: "fit-content",
+  marginBottom: "10px",
+};
+
+const titleStyle: React.CSSProperties = {
+  fontSize: "36px",
+  fontWeight: 900,
+  margin: "0 0 8px 0",
+  letterSpacing: "-1px",
+};
+
+const metaRow: React.CSSProperties = {
+  display: "flex",
+  gap: "12px",
+  fontSize: "14px",
+  fontWeight: 500,
+  opacity: 0.9,
+};
+
+/* backBtn removed; using BackButton component for consistent styling */
+
+const mainContent: React.CSSProperties = {
+  maxWidth: "1200px",
+  margin: "0 auto",
+  padding: "40px 20px",
+};
+
+const sectionHeader: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-end",
+  marginBottom: "30px",
+  borderBottom: "2px solid #f8fafc",
+  paddingBottom: "15px",
+};
+
+const bentoGrid: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+  gap: "25px",
+};
+
+const tileStyle: React.CSSProperties = {
+  background: "#fff",
+  borderRadius: "24px",
+  overflow: "hidden",
+  border: "1px solid #f1f5f9",
+  cursor: "pointer",
+  transition: "all 0.3s ease",
+  display: "flex",
+  flexDirection: "column",
+};
+
+const tileImageContainer: React.CSSProperties = {
+  position: "relative",
+  height: "200px",
+};
+
+const tileImage: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  objectFit: "cover",
+};
+
+const priceTag: React.CSSProperties = {
+  position: "absolute",
+  bottom: "12px",
+  right: "12px",
+  background: "white",
+  padding: "6px 12px",
+  borderRadius: "12px",
+  fontWeight: 800,
+  color: "#10b981",
+  boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+};
+
+const tileBody: React.CSSProperties = {
+  padding: "20px",
+  display: "flex",
+  flexDirection: "column",
+  flex: 1,
+};
+
+const tileTitle: React.CSSProperties = {
+  fontSize: "18px",
+  fontWeight: 800,
+  margin: "0 0 8px 0",
+  color: "#1e293b",
+};
+
+const tileDesc: React.CSSProperties = {
+  fontSize: "13px",
+  color: "#64748b",
+  margin: "0 0 20px 0",
+  lineHeight: "1.5",
+  flex: 1,
+};
+
+const addBtnStyle: React.CSSProperties = {
+  width: "100%",
+  padding: "12px",
+  borderRadius: "14px",
+  border: "none",
+  fontWeight: 700,
+  cursor: "pointer",
+  transition: "0.2s",
+};
+
+function Loader() {
+  return (
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#fff",
+      }}
+    >
       <div
         style={{
-          background: "#fff",
-          padding: "20px 16px",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+          width: "40px",
+          height: "40px",
+          border: "3px solid #f3f3f3",
+          borderTop: "3px solid #10b981",
+          borderRadius: "50%",
+          animation: "spin 1s linear infinite",
+        }}
+      />
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+function NotFound({ navigate }: { navigate: any }) {
+  return (
+    <div
+      style={{
+        height: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <h2 style={{ fontWeight: 800 }}>Restaurante no disponible</h2>
+      <button
+        onClick={() => navigate("/restaurantes")}
+        style={{
+          marginTop: "20px",
+          padding: "12px 24px",
+          borderRadius: "12px",
+          border: "none",
+          background: "#000",
+          color: "#fff",
+          cursor: "pointer",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 8,
-          }}
-        >
-          <span style={{ fontSize: 32 }}>{restaurante.emoji}</span>
-          <h1
-            style={{
-              margin: 0,
-              fontSize: 24,
-              fontWeight: 800,
-              color: "#0f172a",
-            }}
-          >
-            {restaurante.nombre}
-          </h1>
-        </div>
-        <p style={{ margin: "0 0 12px 0", fontSize: 14, color: "#6b7280" }}>
-          {restaurante.descripcion}
-        </p>
-        <div
-          style={{ display: "flex", gap: 16, fontSize: 14, color: "#374151" }}
-        >
-          <span style={{ fontWeight: 700 }}>
-            ⭐ {restaurante.calificacion.toFixed(1)}
-          </span>
-          <span>{restaurante.tiempo_entrega_min} min</span>
-          <span>${restaurante.costo_envio} envío</span>
-        </div>
-      </div>
-
-      {/* Platillos */}
-      <div style={{ maxWidth: 500, margin: "0 auto", padding: 16 }}>
-        <h2
-          style={{
-            fontSize: 20,
-            fontWeight: 800,
-            color: "#111827",
-            margin: "0 0 16px 0",
-          }}
-        >
-          Menú
-        </h2>
-
-        {platillos.length === 0 ? (
-          <div style={{ textAlign: "center", padding: 40 }}>
-            <div style={{ fontSize: 48 }}>🍽️</div>
-            <p style={{ color: "#6b7280", marginTop: 12 }}>
-              No hay platillos disponibles
-            </p>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {platillos.map((platillo) => (
-              <div
-                key={platillo.id}
-                role="button"
-                tabIndex={0}
-                onClick={() => navigate(`/platillo/${platillo.id}`)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ")
-                    navigate(`/platillo/${platillo.id}`);
-                }}
-                style={{
-                  background: "#fff",
-                  borderRadius: 12,
-                  padding: 12,
-                  display: "flex",
-                  gap: 12,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-                  cursor: "pointer",
-                }}
-              >
-                {platillo.imagen_url && (
-                  <div
-                    style={{
-                      width: 80,
-                      height: 80,
-                      borderRadius: 8,
-                      backgroundImage: `url(${platillo.imagen_url})`,
-                      backgroundSize: "cover",
-                      backgroundPosition: "center",
-                      flex: "0 0 80px",
-                    }}
-                  />
-                )}
-                <div style={{ flex: 1 }}>
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: 4,
-                    }}
-                  >
-                    <h3
-                      style={{
-                        margin: 0,
-                        fontSize: 16,
-                        fontWeight: 800,
-                        color: "#0f172a",
-                      }}
-                    >
-                      {platillo.nombre}
-                    </h3>
-                    <span
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 700,
-                        color: "#059669",
-                      }}
-                    >
-                      ${platillo.precio.toFixed(2)}
-                    </span>
-                  </div>
-                  {platillo.descripcion && (
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: 13,
-                        color: "#6b7280",
-                      }}
-                    >
-                      {platillo.descripcion}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+        Explorar otros
+      </button>
     </div>
   );
 }

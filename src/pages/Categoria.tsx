@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import BottomNav from "../components/BottomNav";
+import BackButton from "../components/BackButton";
 
 interface Platillo {
   id: string;
@@ -131,19 +132,7 @@ export default function Categoria() {
           zIndex: 30,
         }}
       >
-        <button
-          onClick={() => navigate(-1)}
-          style={{
-            border: "none",
-            background: "transparent",
-            fontSize: 20,
-            cursor: "pointer",
-            padding: 0,
-            marginBottom: 8,
-          }}
-        >
-          ← Volver
-        </button>
+        <BackButton onClick={() => navigate(-1)} style={{ position: 'relative', top: 0, left: 0 }} />
 
         <h2
           style={{ fontSize: 24, fontWeight: 800, color: "#111827", margin: 0 }}

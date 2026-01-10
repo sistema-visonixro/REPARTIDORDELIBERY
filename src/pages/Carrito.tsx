@@ -247,11 +247,17 @@ export default function Carrito() {
                 className="carrito-restaurant-banner"
               >
                 <div style={styles.restaurantInfo}>
-                  <span style={styles.restaurantEmoji} className="carrito-restaurant-emoji">
+                  <span
+                    style={styles.restaurantEmoji}
+                    className="carrito-restaurant-emoji"
+                  >
                     {resumen.restaurante_emoji}
                   </span>
                   <div>
-                    <h2 style={styles.restaurantName} className="carrito-restaurant-name">
+                    <h2
+                      style={styles.restaurantName}
+                      className="carrito-restaurant-name"
+                    >
                       {resumen.restaurante_nombre}
                     </h2>
                     <p style={styles.restaurantStats}>
@@ -275,7 +281,10 @@ export default function Carrito() {
                   style={styles.itemCard}
                   className="carrito-item-card"
                 >
-                  <div style={styles.itemContent} className="carrito-item-content">
+                  <div
+                    style={styles.itemContent}
+                    className="carrito-item-content"
+                  >
                     {item.platillo_imagen && (
                       <div style={styles.imageContainer}>
                         <img
@@ -293,7 +302,9 @@ export default function Carrito() {
                     )}
 
                     <div style={styles.itemDetails}>
-                      <h3 style={styles.itemName} className="carrito-item-name">{item.platillo_nombre}</h3>
+                      <h3 style={styles.itemName} className="carrito-item-name">
+                        {item.platillo_nombre}
+                      </h3>
                       <p style={styles.itemDescription}>
                         {item.platillo_descripcion}
                       </p>
@@ -308,8 +319,14 @@ export default function Carrito() {
                         </div>
                       )}
 
-                      <div style={styles.itemActions} className="carrito-item-actions">
-                        <div style={styles.quantityControl} className="carrito-quantity-control">
+                      <div
+                        style={styles.itemActions}
+                        className="carrito-item-actions"
+                      >
+                        <div
+                          style={styles.quantityControl}
+                          className="carrito-quantity-control"
+                        >
                           <motion.button
                             whileTap={{ scale: 0.9 }}
                             onClick={() =>
@@ -318,7 +335,8 @@ export default function Carrito() {
                             disabled={item.cantidad <= 1}
                             style={{
                               ...styles.quantityButton,
-                              ...(item.cantidad <= 1 && styles.quantityButtonDisabled),
+                              ...(item.cantidad <= 1 &&
+                                styles.quantityButtonDisabled),
                             }}
                           >
                             −
@@ -335,7 +353,10 @@ export default function Carrito() {
                           </motion.button>
                         </div>
 
-                        <div style={styles.itemFooter} className="carrito-item-footer">
+                        <div
+                          style={styles.itemFooter}
+                          className="carrito-item-footer"
+                        >
                           <span style={styles.subtotal}>
                             ${item.subtotal.toFixed(2)}
                           </span>
@@ -378,9 +399,7 @@ export default function Carrito() {
               </div>
 
               <div style={styles.formGroup}>
-                <label style={styles.label}>
-                  Notas adicionales (opcional)
-                </label>
+                <label style={styles.label}>Notas adicionales (opcional)</label>
                 <textarea
                   value={notas}
                   onChange={(e) => setNotas(e.target.value)}
@@ -415,7 +434,10 @@ export default function Carrito() {
 
                 <div style={styles.totalRow}>
                   <span style={styles.totalLabel}>Total</span>
-                  <span style={styles.totalValue} className="carrito-total-value">
+                  <span
+                    style={styles.totalValue}
+                    className="carrito-total-value"
+                  >
                     ${resumen?.total_carrito.toFixed(2)}
                   </span>
                 </div>
@@ -462,10 +484,6 @@ export default function Carrito() {
                   </>
                 )}
               </motion.button>
-
-              <p style={styles.secureText}>
-                🔒 Pago seguro y protegido
-              </p>
             </motion.div>
           </div>
         </div>

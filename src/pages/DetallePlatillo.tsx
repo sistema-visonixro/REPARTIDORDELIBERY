@@ -3,6 +3,9 @@ import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import "./DetallePlatillo.css";
+import SuccessToast from "../components/SuccessToast";
+import ConfirmModal from "../components/ConfirmModal";
+import BackButton from "../components/BackButton";
 
 interface Platillo {
   id: string;
@@ -27,6 +30,11 @@ export default function DetallePlatillo() {
   const [agregando, setAgregando] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [pendingRestauranteId, setPendingRestauranteId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (!id) return;
@@ -63,7 +71,45 @@ export default function DetallePlatillo() {
     }
   }
 
-  // Lógica para agregar al carrito
+  // Helper que realiza el upsert en carrito (asume conflicto resuelto)
+  async function doAdd(userId: string, restauranteId: string | null) {
+    // Verificar si ya existe el item en el carrito
+    const { data: existente, error: selErr } = await supabase
+      .from("carrito")
+      .select("id,cantidad")
+      .eq("usuario_id", userId)
+      .eq("platillo_id", platillo!.id)
+      .maybeSingle();
+
+    if (selErr) throw selErr;
+
+    if (existente) {
+      const nuevaCantidad = (existente.cantidad || 0) + quantity;
+      const { error: updErr } = await supabase
+        .from("carrito")
+        .update({ cantidad: nuevaCantidad, notas: notes || null })
+        .eq("id", existente.id);
+      if (updErr) throw updErr;
+    } else {
+      const payload = {
+        usuario_id: userId,
+        platillo_id: platillo!.id,
+        cantidad: quantity,
+        notas: notes || null,
+        precio_unitario: platillo!.precio ?? 0,
+        restaurante_id: restauranteId,
+      };
+
+      const { error: insErr } = await supabase.from("carrito").insert(payload);
+      if (insErr) throw insErr;
+    }
+
+    // Feedback
+    setShowSuccess(true);
+    setTimeout(() => navigate("/carrito"), 900);
+  }
+
+  // Lógica para agregar al carrito con comprobación de conflicto
   async function agregarAlCarrito() {
     if (!usuario) {
       navigate("/login");
@@ -77,45 +123,55 @@ export default function DetallePlatillo() {
       const userId = (usuario as any).id;
       const restauranteId = platillo.restaurante?.id ?? platillo.restaurante_id;
 
-      // Verificar si ya existe el item en el carrito
-      const { data: existente, error: selErr } = await supabase
-        .from("carrito")
-        .select("id,cantidad")
-        .eq("usuario_id", userId)
-        .eq("platillo_id", platillo.id)
-        .maybeSingle();
-
-      if (selErr) throw selErr;
-
-      if (existente) {
-        const nuevaCantidad = (existente.cantidad || 0) + quantity;
-        const { error: updErr } = await supabase
+      // Verificar si el carrito tiene items de otro restaurante
+      if (restauranteId) {
+        const { data: conflict, error: conflictErr } = await supabase
           .from("carrito")
-          .update({ cantidad: nuevaCantidad, notas: notes || null })
-          .eq("id", existente.id);
-        if (updErr) throw updErr;
-      } else {
-        const payload = {
-          usuario_id: userId,
-          platillo_id: platillo.id,
-          cantidad: quantity,
-          notas: notes || null,
-          precio_unitario: platillo.precio ?? 0,
-          restaurante_id: restauranteId,
-        };
+          .select("id,restaurante_id")
+          .eq("usuario_id", userId)
+          .neq("restaurante_id", restauranteId)
+          .limit(1)
+          .maybeSingle();
 
-        const { error: insErr } = await supabase
-          .from("carrito")
-          .insert(payload);
-        if (insErr) throw insErr;
+        if (conflictErr) throw conflictErr;
+
+        if (conflict) {
+          // Mostrar modal de confirmación en lugar de window.confirm
+          setPendingRestauranteId(restauranteId);
+          setShowConfirm(true);
+          setAgregando(false);
+          return;
+        }
       }
 
-      navigate("/carrito");
+      await doAdd(userId, restauranteId || null);
     } catch (err: any) {
       console.error("Error agregarAlCarrito:", err);
       alert(err?.message || "No se pudo agregar al carrito. Intenta de nuevo.");
     } finally {
       setAgregando(false);
+    }
+  }
+
+  async function handleConfirmClearAndAdd() {
+    setShowConfirm(false);
+    setAgregando(true);
+    try {
+      const userId = (usuario as any).id;
+      // Vaciar carrito del usuario
+      const { error: delErr } = await supabase
+        .from("carrito")
+        .delete()
+        .eq("usuario_id", userId);
+      if (delErr) throw delErr;
+
+      await doAdd(userId, pendingRestauranteId);
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || "No se pudo vaciar/agregar al carrito.");
+    } finally {
+      setAgregando(false);
+      setPendingRestauranteId(null);
     }
   }
 
@@ -128,25 +184,7 @@ export default function DetallePlatillo() {
       style={{ minHeight: "100vh", background: "#fff", paddingBottom: 120 }}
     >
       {/* Botón Volver Flotante */}
-      <button
-        onClick={() => navigate(-1)}
-        style={{
-          position: "absolute",
-          top: 20,
-          left: 20,
-          zIndex: 10,
-          width: 40,
-          height: 40,
-          borderRadius: "50%",
-          border: "none",
-          background: "rgba(255,255,255,0.9)",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-          cursor: "pointer",
-          fontSize: 20,
-        }}
-      >
-        ←
-      </button>
+      <BackButton onClick={() => navigate(-1)} style={{ top: 20, left: 20 }} />
 
       {/* Hero Image */}
       <div
@@ -317,6 +355,21 @@ export default function DetallePlatillo() {
           </button>
         </div>
       </div>
+      <ConfirmModal
+        visible={showConfirm}
+        title="Carrito contiene items de otro restaurante"
+        description="Tu carrito contiene productos de otro restaurante. ¿Deseas vaciar el carrito y agregar este platillo?"
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={handleConfirmClearAndAdd}
+        confirmLabel="Vaciar y agregar"
+        cancelLabel="Cancelar"
+      />
+
+      <SuccessToast
+        visible={showSuccess}
+        message="Añadido al carrito"
+        onClose={() => setShowSuccess(false)}
+      />
     </div>
   );
 }

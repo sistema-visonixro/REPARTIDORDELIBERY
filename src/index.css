@@ -84,7 +84,7 @@ h3,
 h4,
 h5,
 h6 {
-  color: var(--text-primary);
+  color: #000000;
   margin: 0;
 }
 
@@ -109,12 +109,27 @@ textarea,
 select {
   font-family: inherit;
   font-size: 1em;
-  color: var(--text-primary);
-  background-color: var(--bg-secondary);
-  border: 1px solid var(--border-color);
+  color: #000000;
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
   padding: 0.6em 1em;
   transition: all 0.3s ease;
+}
+
+/* Placeholder and ensure inputs stay light even in .dark mode */
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #ffffff !important;
+  color: #000000 !important;
+  border-color: #e5e7eb !important;
 }
 
 input:focus,
