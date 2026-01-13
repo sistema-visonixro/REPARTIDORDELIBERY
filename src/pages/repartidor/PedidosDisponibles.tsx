@@ -43,7 +43,16 @@ export default function PedidosDisponibles() {
 
     setTomandoPedido(pedidoId);
     try {
-      await tomarPedido(pedidoId, usuario.id);
+      const data = await tomarPedido(pedidoId, usuario.id);
+      // si la RPC devuelve false, informar al usuario
+      if (!data) {
+        alert(
+          "No fue posible tomar el pedido. Puede ya estar asignado o no estar listo para asignación."
+        );
+        await cargarPedidos();
+        return;
+      }
+
       alert('¡Pedido asignado! Ve a "Mis Pedidos" para comenzar la entrega.');
       await cargarPedidos();
     } catch (error) {

@@ -8,7 +8,7 @@ import {
 } from "../../services/repartidor.service";
 import type { PedidoRepartidor } from "../../types/repartidor.types";
 import { useAuth } from "../../context/AuthContext";
-import MapaTracking from "../../components/MapaTracking";
+import MapaRutaProfesional from "../../components/MapaRutaProfesional";
 
 export default function EntregaActiva() {
   const { pedidoId } = useParams<{ pedidoId: string }>();
@@ -197,10 +197,10 @@ export default function EntregaActiva() {
       {/* Mapa de Tracking */}
       <div className="bg-white rounded-lg shadow-md p-6 mb-4">
         <h2 className="text-lg font-semibold mb-3">🗺️ Mapa de Entrega</h2>
-        <MapaTracking
-          pedidoId={pedidoId!}
+        <MapaRutaProfesional
           clienteLat={pedido.latitud}
           clienteLng={pedido.longitud}
+          repartidorId={usuario?.id ?? null}
         />
       </div>
 

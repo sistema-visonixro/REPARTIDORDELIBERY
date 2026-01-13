@@ -41,3 +41,41 @@ export const loginUsuario = async (
     return null;
   }
 };
+
+export const loginRepartidor = async (
+  codigo: string,
+  clave: string
+): Promise<Usuario | null> => {
+  try {
+    const { data, error } = await supabase
+      .from("repartidores")
+      .select("*")
+      .eq("codigo", codigo)
+      .eq("clave", clave)
+      .single();
+
+    if (error || !data) {
+      console.error("Error al iniciar sesión repartidor:", error);
+      return null;
+    }
+
+    const repartidor: any = data;
+
+    const usuario: Usuario = {
+      id: repartidor.id,
+      email: "",
+      nombre: repartidor.nombre_completo || "",
+      telefono: repartidor.telefono || undefined,
+      direccion: undefined,
+      tipo_usuario: "repartidor",
+      activo: repartidor.estado !== "inactivo",
+      created_at: repartidor.creado_en || new Date().toISOString(),
+      updated_at: repartidor.actualizado_en || new Date().toISOString(),
+    };
+
+    return usuario;
+  } catch (error) {
+    console.error("Error al iniciar sesión repartidor:", error);
+    return null;
+  }
+};

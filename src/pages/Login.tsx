@@ -3,11 +3,11 @@ import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useTheme } from "../context/ThemeContext";
-import { loginUsuario } from "../lib/supabase";
+import { loginRepartidor } from "../lib/supabase";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [codigo, setCodigo] = useState("");
+  const [clave, setClave] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const { setUsuario } = useAuth();
@@ -20,10 +20,10 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const usuario = await loginUsuario(email, password);
+      const usuario = await loginRepartidor(codigo, clave);
       if (usuario) {
         setUsuario(usuario);
-        
+
         // Redireccionar según el tipo de usuario
         switch (usuario.tipo_usuario) {
           case "repartidor":
@@ -44,7 +44,7 @@ export default function Login() {
             break;
         }
       } else {
-        setError("Email o contraseña incorrectos");
+        setError("Código o clave incorrectos");
       }
     } catch (err) {
       setError("Error al iniciar sesión. Intenta nuevamente.");
@@ -258,7 +258,7 @@ export default function Login() {
             {/* Email Input */}
             <div style={{ animation: "slideInRight 0.6s ease-out" }}>
               <label
-                htmlFor="email"
+                htmlFor="codigo"
                 style={{
                   display: "block",
                   fontSize: "13px",
@@ -270,11 +270,11 @@ export default function Login() {
                 📧 Email
               </label>
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
+                id="codigo"
+                type="text"
+                value={codigo}
+                onChange={(e) => setCodigo(e.target.value)}
+                placeholder="Código de repartidor"
                 required
                 disabled={loading}
                 style={{
@@ -313,7 +313,7 @@ export default function Login() {
             {/* Password Input */}
             <div style={{ animation: "slideInRight 0.7s ease-out" }}>
               <label
-                htmlFor="password"
+                htmlFor="clave"
                 style={{
                   display: "block",
                   fontSize: "13px",
@@ -325,11 +325,11 @@ export default function Login() {
                 🔒 Contraseña
               </label>
               <input
-                id="password"
+                id="clave"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                value={clave}
+                onChange={(e) => setClave(e.target.value)}
+                placeholder="Clave"
                 required
                 disabled={loading}
                 style={{
