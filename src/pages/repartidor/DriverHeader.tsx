@@ -1,8 +1,12 @@
 import "./driver.css";
 import { useAuth } from "../../context/AuthContext";
+import { useTheme } from "../../context/ThemeContext";
+import { FaSun, FaMoon } from "react-icons/fa";
 
 export default function DriverHeader() {
   const { usuario } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
+
   const initials = (usuario?.nombre || usuario?.email || "?")
     .charAt(0)
     .toUpperCase();
@@ -17,8 +21,12 @@ export default function DriverHeader() {
           <div className="avatar">{initials}</div>
         </div>
         <div>
-          <h4 style={{ fontSize: "1rem" }}>{name}</h4>
-          <p style={{ color: "var(--text-dim)", fontSize: "0.75rem" }}>
+          <h4 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: 4 }}>
+            {name}
+          </h4>
+          <p
+            style={{ color: "var(--text-dim)", fontSize: "0.8rem", margin: 0 }}
+          >
             <i
               className="fas fa-star"
               style={{ color: "#fbbf24", marginRight: 6 }}
@@ -27,7 +35,17 @@ export default function DriverHeader() {
           </p>
         </div>
       </div>
-      <div className="online-toggle">EN LÍNEA</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div className="online-toggle">EN LÍNEA</div>
+        <button
+          className="theme-toggle"
+          onClick={toggleTheme}
+          aria-label="Toggle theme"
+          type="button"
+        >
+          {isDark ? <FaSun /> : <FaMoon />}
+        </button>
+      </div>
     </header>
   );
 }

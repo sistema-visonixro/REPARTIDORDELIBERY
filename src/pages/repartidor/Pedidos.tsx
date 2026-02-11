@@ -166,36 +166,36 @@ export default function Pedidos({
           <div key={p.id} className="order-item">
             <div className="order-info">
               <span className="badge">{nombreRest || "Pedido"}</span>
-              <span style={{ fontWeight: "bold", color: "var(--success)" }}>
+              <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--success)" }}>
                 {formatHNL(p.total)}
               </span>
             </div>
 
             <div className="route-visual">
               <div className="point">
-                <p style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", marginBottom: 4 }}>
                   {direccionRest}
                 </p>
 
-                <p style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>
+                <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", margin: 0 }}>
                   {p.creado_en}
                 </p>
               </div>
               <div className="point destination">
-                <p style={{ fontSize: "0.85rem", fontWeight: 600 }}>
+                <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", marginBottom: 4 }}>
                   {p.direccion_entrega || "-"}
                 </p>
-                <p style={{ fontSize: "0.75rem", color: "var(--text-dim)" }}>
-                  Estado: {p.estado || "-"}
+                <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", margin: 0 }}>
+                  <strong>Estado:</strong> {p.estado || "-"}
                 </p>
               </div>
             </div>
 
             <div className="flex space-x-2">
               {p.notas_cliente && (
-                <div style={{ marginRight: 8 }}>
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0 }}>
-                    <strong>Nota:</strong> {p.notas_cliente}
+                <div style={{ marginBottom: 12, padding: 12, background: "var(--card-bg-secondary)", borderRadius: 12, border: "1px solid var(--border-color)" }}>
+                  <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", margin: 0 }}>
+                    <strong style={{ color: "var(--accent)" }}>💬 Nota:</strong> {p.notas_cliente}
                   </p>
                 </div>
               )}
