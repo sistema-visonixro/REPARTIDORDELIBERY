@@ -158,7 +158,7 @@ export default function MapaRutaProfesional3D({
     try {
       console.log("🚀 Intentando crear mapa MapLibre GL...");
 
-      const tileSource = isDarkTheme ? "dark_all" : "light_all";
+      const tileSource = isDarkTheme ? "dark_all" : "rastertiles/voyager";
       const sourceId = isDarkTheme ? "carto-dark" : "carto-light";
 
       const map = new maplibregl.Map({
@@ -222,10 +222,13 @@ export default function MapaRutaProfesional3D({
           restauranteEl.className = "marker-3d marker-restaurante";
           restauranteEl.innerHTML = `
             <div class="marker-pulse"></div>
-            <div class="marker-icon">�</div>
+            <div class="marker-icon">🍽️</div>
           `;
 
-          new maplibregl.Marker(restauranteEl)
+          new maplibregl.Marker({
+            element: restauranteEl,
+            anchor: "bottom",
+          })
             .setLngLat([restauranteLng, restauranteLat])
             .setPopup(
               new maplibregl.Popup({
@@ -234,7 +237,7 @@ export default function MapaRutaProfesional3D({
               }).setHTML(
                 `
                 <div class="popup-content">
-                  <div class="popup-icon">�</div>
+                  <div class="popup-icon">🍽️</div>
                   <h3>Restaurante</h3>
                   <p>Punto de recogida</p>
                 </div>
@@ -253,7 +256,10 @@ export default function MapaRutaProfesional3D({
           <div class="marker-icon">👤</div>
         `;
 
-        new maplibregl.Marker(clienteEl)
+        new maplibregl.Marker({
+          element: clienteEl,
+          anchor: "bottom",
+        })
           .setLngLat([clienteLng, clienteLat])
           .setPopup(
             new maplibregl.Popup({ offset: 25, className: "popup-3d" }).setHTML(
@@ -329,7 +335,10 @@ export default function MapaRutaProfesional3D({
         <div class="marker-icon marker-icon-animated">🏍️</div>
       `;
 
-      const marker = new maplibregl.Marker(repartidorEl)
+      const marker = new maplibregl.Marker({
+        element: repartidorEl,
+        anchor: "bottom",
+      })
         .setLngLat([repartidorPos.lng, repartidorPos.lat])
         .setPopup(
           new maplibregl.Popup({ offset: 25, className: "popup-3d" }).setHTML(
@@ -430,7 +439,7 @@ export default function MapaRutaProfesional3D({
               onClick={() => flyToLocation(restauranteLat, restauranteLng)}
               title="Ir a ubicación del restaurante"
             >
-              <span className="legend-icon">�</span>
+              <span className="legend-icon">🍽️</span>
               <span>Restaurante</span>
             </div>
           )}
