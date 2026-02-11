@@ -29,6 +29,7 @@ export default function MapaRutaProfesional3D({
     lng: number;
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDarkTheme, setIsDarkTheme] = useState(false);
 
   console.log("🗺️ MapaRutaProfesional3D - Props recibidas:", {
     clienteLat,
@@ -157,17 +158,20 @@ export default function MapaRutaProfesional3D({
     try {
       console.log("🚀 Intentando crear mapa MapLibre GL...");
 
+      const tileSource = isDarkTheme ? "dark_all" : "light_all";
+      const sourceId = isDarkTheme ? "carto-dark" : "carto-light";
+
       const map = new maplibregl.Map({
         container: mapContainerRef.current,
         style: {
           version: 8,
           sources: {
-            "carto-dark": {
+            [sourceId]: {
               type: "raster",
               tiles: [
-                "https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-                "https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
-                "https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png",
+                `https://a.basemaps.cartocdn.com/${tileSource}/{z}/{x}/{y}.png`,
+                `https://b.basemaps.cartocdn.com/${tileSource}/{z}/{x}/{y}.png`,
+                `https://c.basemaps.cartocdn.com/${tileSource}/{z}/{x}/{y}.png`,
               ],
               tileSize: 256,
               attribution:
@@ -176,9 +180,9 @@ export default function MapaRutaProfesional3D({
           },
           layers: [
             {
-              id: "carto-dark",
+              id: sourceId,
               type: "raster",
-              source: "carto-dark",
+              source: sourceId,
             },
           ],
         },
@@ -218,7 +222,7 @@ export default function MapaRutaProfesional3D({
           restauranteEl.className = "marker-3d marker-restaurante";
           restauranteEl.innerHTML = `
             <div class="marker-pulse"></div>
-            <div class="marker-icon">🍽️</div>
+            <div class="marker-icon">�</div>
           `;
 
           new maplibregl.Marker(restauranteEl)
@@ -230,7 +234,7 @@ export default function MapaRutaProfesional3D({
               }).setHTML(
                 `
                 <div class="popup-content">
-                  <div class="popup-icon">🍽️</div>
+                  <div class="popup-icon">�</div>
                   <h3>Restaurante</h3>
                   <p>Punto de recogida</p>
                 </div>
@@ -246,7 +250,7 @@ export default function MapaRutaProfesional3D({
         clienteEl.className = "marker-3d marker-cliente";
         clienteEl.innerHTML = `
           <div class="marker-pulse"></div>
-          <div class="marker-icon">🏠</div>
+          <div class="marker-icon">👤</div>
         `;
 
         new maplibregl.Marker(clienteEl)
@@ -255,7 +259,7 @@ export default function MapaRutaProfesional3D({
             new maplibregl.Popup({ offset: 25, className: "popup-3d" }).setHTML(
               `
               <div class="popup-content">
-                <div class="popup-icon">🏠</div>
+                <div class="popup-icon">👤</div>
                 <h3>Cliente</h3>
                 <p>Destino de entrega</p>
               </div>
@@ -293,7 +297,14 @@ export default function MapaRutaProfesional3D({
         mapRef.current = null;
       }
     };
-  }, [clienteLat, clienteLng, restauranteLat, restauranteLng, loading]);
+  }, [
+    clienteLat,
+    clienteLng,
+    restauranteLat,
+    restauranteLng,
+    loading,
+    isDarkTheme,
+  ]);
 
   // Actualizar marcador del repartidor con animación
   useEffect(() => {
@@ -379,7 +390,18 @@ export default function MapaRutaProfesional3D({
   console.log("🎨 Renderizando contenedor del mapa");
 
   return (
-    <div className="mapa-3d-container">
+    <div
+      className={`mapa-3d-container ${isDarkTheme ? "theme-dark" : "theme-light"}`}
+    >
+      {/* Botón toggle de tema */}
+      <button
+        className="theme-toggle-btn"
+        onClick={() => setIsDarkTheme(!isDarkTheme)}
+        title={isDarkTheme ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+      >
+        {isDarkTheme ? "☀️" : "🌙"}
+      </button>
+
       {/* Panel de información flotante */}
       {repartidorPos && (
         <div className="info-panel-3d">
@@ -408,7 +430,7 @@ export default function MapaRutaProfesional3D({
               onClick={() => flyToLocation(restauranteLat, restauranteLng)}
               title="Ir a ubicación del restaurante"
             >
-              <span className="legend-icon">🍽️</span>
+              <span className="legend-icon">�</span>
               <span>Restaurante</span>
             </div>
           )}
@@ -427,7 +449,7 @@ export default function MapaRutaProfesional3D({
           onClick={() => flyToLocation(clienteLat, clienteLng)}
           title="Ir a ubicación del cliente"
         >
-          <span className="legend-icon">🏠</span>
+          <span className="legend-icon">👤</span>
           <span>Cliente</span>
         </div>
       </div>
