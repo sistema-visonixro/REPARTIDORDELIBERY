@@ -19,6 +19,17 @@
   color: var(--text-main);
 }
 
+/* Asegurar que el mapa sea visible en la página */
+.mobile-viewport .mapa-3d-container {
+  background: #fff;
+  margin: 20px 0;
+}
+
+.mobile-viewport h3 {
+  color: var(--text-main);
+  margin-bottom: 16px;
+}
+
 .header {
   display: flex;
   justify-content: space-between;

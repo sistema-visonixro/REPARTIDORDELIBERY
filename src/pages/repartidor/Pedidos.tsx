@@ -58,7 +58,14 @@ export default function Pedidos({
         });
 
         if (error) throw error;
-        setPedidos((data as Pedido[]) || []);
+        // Filtrar pedidos con estado 'entregado' como medida de seguridad
+        const fetched = (data as Pedido[]) || [];
+        // Normalizar y filtrar cualquier variante de 'entregado' (mayúsculas/espacios)
+        const visible = fetched.filter(
+          (p) =>
+            (p.estado || "").toString().toLowerCase().trim() !== "entregado",
+        );
+        setPedidos(visible);
       } catch (err: any) {
         console.error("Error cargando pedidos:", err);
         setError(err.message || "Error al cargar pedidos");
@@ -101,17 +108,17 @@ export default function Pedidos({
 
           if (!latestErr && latest) {
             alert(
-              `No fue posible tomar el pedido. Estado: ${latest.estado} | repartidor_id: ${latest.repartidor_id} | asignado_en: ${latest.asignado_en}`
+              `No fue posible tomar el pedido. Estado: ${latest.estado} | repartidor_id: ${latest.repartidor_id} | asignado_en: ${latest.asignado_en}`,
             );
           } else {
             alert(
-              "No fue posible tomar el pedido. Puede ya estar asignado o no estar listo para asignación."
+              "No fue posible tomar el pedido. Puede ya estar asignado o no estar listo para asignación.",
             );
           }
         } catch (e) {
           console.error("Error consultando estado del pedido:", e);
           alert(
-            "No fue posible tomar el pedido. Puede ya estar asignado o no estar listo para asignación."
+            "No fue posible tomar el pedido. Puede ya estar asignado o no estar listo para asignación.",
           );
         }
 
@@ -132,7 +139,7 @@ export default function Pedidos({
       const data = await marcarPedidoEntregado(pedidoId, usuario.id);
       if (!data) {
         alert(
-          "No se pudo marcar como entregado. Verifica el estado del pedido."
+          "No se pudo marcar como entregado. Verifica el estado del pedido.",
         );
         setRefreshKey((k) => k + 1);
         return;
@@ -201,10 +208,10 @@ export default function Pedidos({
                 {assigning[p.id]
                   ? "..."
                   : p.repartidor_id
-                  ? p.repartidor_id === usuario?.id
-                    ? "VER RUTA"
-                    : "YA ASIGNADO"
-                  : "TOMAR PEDIDO"}
+                    ? p.repartidor_id === usuario?.id
+                      ? "VER RUTA"
+                      : "YA ASIGNADO"
+                    : "TOMAR PEDIDO"}
               </button>
 
               {p.repartidor_id &&
