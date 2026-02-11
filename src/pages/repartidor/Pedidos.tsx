@@ -14,6 +14,7 @@ type Pedido = {
   estado?: string;
   creado_en?: string;
   repartidor_id?: string;
+  notas_cliente?: string | null;
 };
 
 export default function Pedidos({
@@ -190,6 +191,13 @@ export default function Pedidos({
             </div>
 
             <div className="flex space-x-2">
+              {p.notas_cliente && (
+                <div style={{ marginRight: 8 }}>
+                  <p style={{ fontSize: "0.85rem", color: "var(--text-dim)", margin: 0 }}>
+                    <strong>Nota:</strong> {p.notas_cliente}
+                  </p>
+                </div>
+              )}
               <button
                 className="btn-accept"
                 onClick={() => {
