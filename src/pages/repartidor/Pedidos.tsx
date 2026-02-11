@@ -137,8 +137,13 @@ export default function Pedidos({
   const handleMarkDelivered = async (pedidoId: string) => {
     if (!usuario) return;
     try {
+      console.log("handleMarkDelivered: inicio", {
+        pedidoId,
+        usuarioId: usuario.id,
+      });
       setDelivering((s) => ({ ...s, [pedidoId]: true }));
       const data = await marcarPedidoEntregado(pedidoId, usuario.id);
+      console.log("handleMarkDelivered: resultado service", data);
       if (!data) {
         alert(
           "No se pudo marcar como entregado. Verifica el estado del pedido.",
@@ -148,9 +153,13 @@ export default function Pedidos({
       }
       alert("Pedido marcado como entregado.");
       setRefreshKey((k) => k + 1);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error al marcar entregado:", err);
-      alert("Error al marcar el pedido como entregado");
+      const msg =
+        err?.message ||
+        JSON.stringify(err) ||
+        "Error al marcar el pedido como entregado";
+      alert(msg);
     } finally {
       setDelivering((s) => ({ ...s, [pedidoId]: false }));
     }
@@ -166,26 +175,58 @@ export default function Pedidos({
           <div key={p.id} className="order-item">
             <div className="order-info">
               <span className="badge">{nombreRest || "Pedido"}</span>
-              <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--success)" }}>
+              <span
+                style={{
+                  fontWeight: 800,
+                  fontSize: "1.1rem",
+                  color: "var(--success)",
+                }}
+              >
                 {formatHNL(p.total)}
               </span>
             </div>
 
             <div className="route-visual">
               <div className="point">
-                <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", marginBottom: 4 }}>
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                    color: "var(--text-main)",
+                    marginBottom: 4,
+                  }}
+                >
                   {direccionRest}
                 </p>
 
-                <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", margin: 0 }}>
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--text-dim)",
+                    margin: 0,
+                  }}
+                >
                   {p.creado_en}
                 </p>
               </div>
               <div className="point destination">
-                <p style={{ fontSize: "0.9rem", fontWeight: 600, color: "var(--text-main)", marginBottom: 4 }}>
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                    color: "var(--text-main)",
+                    marginBottom: 4,
+                  }}
+                >
                   {p.direccion_entrega || "-"}
                 </p>
-                <p style={{ fontSize: "0.75rem", color: "var(--text-dim)", margin: 0 }}>
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--text-dim)",
+                    margin: 0,
+                  }}
+                >
                   <strong>Estado:</strong> {p.estado || "-"}
                 </p>
               </div>
@@ -193,9 +234,24 @@ export default function Pedidos({
 
             <div className="flex space-x-2">
               {p.notas_cliente && (
-                <div style={{ marginBottom: 12, padding: 12, background: "var(--card-bg-secondary)", borderRadius: 12, border: "1px solid var(--border-color)" }}>
-                  <p style={{ fontSize: "0.85rem", color: "var(--text-secondary)", margin: 0 }}>
-                    <strong style={{ color: "var(--accent)" }}>💬 Nota:</strong> {p.notas_cliente}
+                <div
+                  style={{
+                    marginBottom: 12,
+                    padding: 12,
+                    background: "var(--card-bg-secondary)",
+                    borderRadius: 12,
+                    border: "1px solid var(--border-color)",
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--text-secondary)",
+                      margin: 0,
+                    }}
+                  >
+                    <strong style={{ color: "var(--accent)" }}>💬 Nota:</strong>{" "}
+                    {p.notas_cliente}
                   </p>
                 </div>
               )}

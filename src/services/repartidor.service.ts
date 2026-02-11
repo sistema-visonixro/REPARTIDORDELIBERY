@@ -7,6 +7,8 @@ import type {
   Repartidor,
   PedidoRepartidor,
   PedidoDisponible,
+  PedidoRealizadoRepartidor,
+  Aviso,
 } from "../types/repartidor.types";
 
 // =====================================================
@@ -17,16 +19,26 @@ export async function obtenerPerfilRepartidor(usuarioId: string) {
   const { data, error } = await supabase
     .from("repartidores")
     .select("*")
-    .eq("usuario_id", usuarioId)
-    .single();
+    .eq("id", usuarioId)
+    .maybeSingle();
 
   if (error) throw error;
-  return data as Repartidor;
+  if (data) return data as Repartidor;
+
+  const { data: byUsuario, error: errorByUsuario } = await supabase
+    .from("repartidores")
+    .select("*")
+    .eq("usuario_id", usuarioId)
+    .maybeSingle();
+
+  if (errorByUsuario) throw errorByUsuario;
+  if (!byUsuario) throw new Error("Repartidor no encontrado");
+  return byUsuario as Repartidor;
 }
 
 export async function actualizarPerfilRepartidor(
   repartidorId: string,
-  datos: Partial<Repartidor>
+  datos: Partial<Repartidor>,
 ) {
   const { data, error } = await supabase
     .from("repartidores")
@@ -41,14 +53,14 @@ export async function actualizarPerfilRepartidor(
 
 export async function cambiarDisponibilidad(
   usuarioId: string,
-  disponible: boolean
+  disponible: boolean,
 ) {
   const { data, error } = await supabase.rpc(
     "cambiar_disponibilidad_repartidor",
     {
       p_usuario_id: usuarioId,
       p_disponible: disponible,
-    }
+    },
   );
 
   if (error) throw error;
@@ -80,6 +92,17 @@ export async function obtenerMisPedidos(usuarioId: string) {
   return data as PedidoRepartidor[];
 }
 
+export async function obtenerPedidosRealizadosRepartidor(repartidorId: string) {
+  const { data, error } = await supabase
+    .from("pedidos_realizados_de_repartidor")
+    .select("*")
+    .eq("repartidor_id", repartidorId)
+    .order("entregado_en", { ascending: false });
+
+  if (error) throw error;
+  return data as PedidoRealizadoRepartidor[];
+}
+
 export async function tomarPedido(pedidoId: string, repartidorId: string) {
   const { data, error } = await supabase.rpc("asignar_repartidor_pedido", {
     p_pedido_id: pedidoId,
@@ -92,15 +115,29 @@ export async function tomarPedido(pedidoId: string, repartidorId: string) {
 
 export async function marcarPedidoEntregado(
   pedidoId: string,
-  repartidorId: string
+  repartidorId: string,
 ) {
-  const { data, error } = await supabase.rpc("marcar_pedido_entregado", {
-    p_pedido_id: pedidoId,
-    p_repartidor_id: repartidorId,
-  });
+  try {
+    console.log("marcarPedidoEntregado: llamando RPC", {
+      pedidoId,
+      repartidorId,
+    });
+    const { data, error } = await supabase.rpc("marcar_pedido_entregado", {
+      p_pedido_id: pedidoId,
+      p_repartidor_id: repartidorId,
+    });
 
-  if (error) throw error;
-  return data;
+    if (error) {
+      console.error("marcarPedidoEntregado: error RPC", error);
+      throw error;
+    }
+
+    console.log("marcarPedidoEntregado: resultado", data);
+    return data;
+  } catch (err) {
+    console.error("marcarPedidoEntregado: excepción", err);
+    throw err;
+  }
 }
 
 // =====================================================
@@ -113,7 +150,7 @@ export async function actualizarUbicacion(
   longitud: number,
   pedidoId?: string,
   velocidad?: number,
-  precision?: number
+  precision?: number,
 ) {
   const { data, error } = await supabase.rpc(
     "actualizar_ubicacion_repartidor",
@@ -124,7 +161,7 @@ export async function actualizarUbicacion(
       p_pedido_id: pedidoId || null,
       p_velocidad: velocidad || null,
       p_precision: precision || null,
-    }
+    },
   );
 
   if (error) throw error;
@@ -149,7 +186,7 @@ export async function obtenerUbicacionPedido(pedidoId: string) {
 export function iniciarTrackingGPS(
   repartidorId: string,
   pedidoId: string,
-  intervaloSegundos: number = 60
+  intervaloSegundos: number = 60,
 ): () => void {
   let watchId: number | null = null;
   let intervalId: number | null = null;
@@ -165,7 +202,7 @@ export function iniciarTrackingGPS(
             position.coords.longitude,
             pedidoId,
             position.coords.speed || undefined,
-            position.coords.accuracy
+            position.coords.accuracy,
           );
           console.log("Ubicación actualizada:", position.coords);
         } catch (error) {
@@ -179,7 +216,7 @@ export function iniciarTrackingGPS(
         enableHighAccuracy: true,
         timeout: 5000,
         maximumAge: 0,
-      }
+      },
     );
 
     // También enviar actualizaciones cada X segundos
@@ -192,7 +229,7 @@ export function iniciarTrackingGPS(
             position.coords.longitude,
             pedidoId,
             position.coords.speed || undefined,
-            position.coords.accuracy
+            position.coords.accuracy,
           );
         } catch (error) {
           console.error("Error en actualización periódica:", error);
@@ -253,11 +290,25 @@ export async function marcarNotificacionesLeidas(usuarioId: string) {
 }
 
 // =====================================================
+// Avisos
+// =====================================================
+
+export async function obtenerAvisos() {
+  const { data, error } = await supabase
+    .from("avisos")
+    .select("*")
+    .order("creado_en", { ascending: false });
+
+  if (error) throw error;
+  return data as Aviso[];
+}
+
+// =====================================================
 // Suscripciones en Tiempo Real
 // =====================================================
 
 export function suscribirseAPedidosDisponibles(
-  callback: (pedidos: PedidoDisponible[]) => void
+  callback: (pedidos: PedidoDisponible[]) => void,
 ) {
   const channel = supabase
     .channel("pedidos-disponibles")
@@ -272,7 +323,7 @@ export function suscribirseAPedidosDisponibles(
       async () => {
         const pedidos = await obtenerPedidosDisponibles();
         callback(pedidos);
-      }
+      },
     )
     .subscribe();
 
@@ -283,7 +334,7 @@ export function suscribirseAPedidosDisponibles(
 
 export function suscribirseAMisPedidos(
   usuarioId: string,
-  callback: (pedidos: PedidoRepartidor[]) => void
+  callback: (pedidos: PedidoRepartidor[]) => void,
 ) {
   const channel = supabase
     .channel("mis-pedidos-repartidor")
@@ -298,7 +349,7 @@ export function suscribirseAMisPedidos(
       async () => {
         const pedidos = await obtenerMisPedidos(usuarioId);
         callback(pedidos);
-      }
+      },
     )
     .subscribe();
 

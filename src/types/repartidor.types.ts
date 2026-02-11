@@ -10,6 +10,7 @@ export interface Repartidor {
   foto_url: string | null;
   tipo_vehiculo: "bicicleta" | "moto" | "auto" | "a_pie" | null;
   placa_vehiculo: string | null;
+  clave?: string | null;
   estado: "activo" | "inactivo" | "en_entrega" | "pausado";
   disponible: boolean;
   latitud_actual: number | null;
@@ -54,6 +55,30 @@ export interface PedidoDisponible {
   restaurante_emoji: string;
   total_items: number;
   minutos_desde_creacion: number;
+}
+
+export interface PedidoRealizadoRepartidor {
+  pedido_id: string;
+  repartidor_id: string;
+  entregado_en: string;
+  registrado_en: string;
+  total: number | null;
+  numero_pedido: string | null;
+  restaurante_id?: string | null;
+  restaurante_nombre?: string;
+  restaurante_emoji?: string;
+  direccion_entrega?: string | null;
+  estado?: string | null;
+}
+
+export interface Aviso {
+  id: string;
+  titulo: string;
+  mensaje: string;
+  prioridad: "alta" | "media" | "baja";
+  fecha_inicio: string | null;
+  fecha_fin: string | null;
+  creado_en: string;
 }
 
 export interface UbicacionTracking {

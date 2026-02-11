@@ -6,6 +6,7 @@ interface AuthContextType {
   usuario: Usuario | null;
   setUsuario: (usuario: Usuario | null) => void;
   logout: () => void;
+  cerrarSesion: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,7 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ usuario, setUsuario: setUsuarioAndSave, logout }}
+      value={{ usuario, setUsuario: setUsuarioAndSave, logout, cerrarSesion: logout }}
     >
       {children}
     </AuthContext.Provider>

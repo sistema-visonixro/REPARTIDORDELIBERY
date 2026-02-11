@@ -417,11 +417,11 @@ export default function MapaRutaProfesional3D({
       // add or update source
       if (map.getSource("route")) {
         const source = map.getSource("route") as maplibregl.GeoJSONSource;
-        source.setData({ type: 'Feature', properties: {}, geometry: coords });
+        source.setData({ type: "Feature", properties: {}, geometry: coords });
       } else {
         map.addSource("route", {
           type: "geojson",
-          data: { type: 'Feature', properties: {}, geometry: coords },
+          data: { type: "Feature", properties: {}, geometry: coords },
         } as any);
 
         map.addLayer({

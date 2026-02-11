@@ -76,14 +76,18 @@ export default function EntregaActiva() {
     if (!usuario || !pedidoId) return;
 
     const confirmacion = window.confirm(
-      "¿Confirmas que el pedido fue entregado al cliente?"
+      "¿Confirmas que el pedido fue entregado al cliente?",
     );
-
     if (!confirmacion) return;
 
     setEntregando(true);
     try {
-      await marcarPedidoEntregado(pedidoId, usuario.id);
+      console.log("handleMarcarEntregado: inicio", {
+        pedidoId,
+        usuarioId: usuario.id,
+      });
+      const res = await marcarPedidoEntregado(pedidoId, usuario.id);
+      console.log("handleMarcarEntregado: resultado", res);
 
       // Detener tracking
       if (detenerTrackingRef.current) {
@@ -92,9 +96,13 @@ export default function EntregaActiva() {
 
       alert("✅ Pedido marcado como entregado. ¡Buen trabajo!");
       navigate("/repartidor/mis-pedidos");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error al marcar como entregado:", error);
-      alert("Error al marcar el pedido como entregado");
+      const msg =
+        error?.message ||
+        JSON.stringify(error) ||
+        "Error al marcar el pedido como entregado";
+      alert(msg);
     } finally {
       setEntregando(false);
     }

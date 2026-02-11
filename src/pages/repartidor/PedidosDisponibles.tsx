@@ -48,7 +48,7 @@ export default function PedidosDisponibles() {
       // si la RPC devuelve false, informar al usuario
       if (!data) {
         alert(
-          "No fue posible tomar el pedido. Puede ya estar asignado o no estar listo para asignación."
+          "No fue posible tomar el pedido. Puede ya estar asignado o no estar listo para asignación.",
         );
         await cargarPedidos();
         return;

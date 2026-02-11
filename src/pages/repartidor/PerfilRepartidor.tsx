@@ -149,8 +149,8 @@ export default function PerfilRepartidor() {
                 {cambiandoDisponibilidad
                   ? "⏳"
                   : repartidor.disponible
-                  ? "Pausar"
-                  : "Activar"}
+                    ? "Pausar"
+                    : "Activar"}
               </button>
             </div>
           </div>
@@ -193,13 +193,13 @@ export default function PerfilRepartidor() {
 
             {estadisticas.ganancias_estimadas > 0 && (
               <div className="mt-4 bg-indigo-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-600 mb-1">
-                    Ganancias Estimadas
-                  </p>
-                  <p className="text-3xl font-bold text-indigo-600">
-                    {formatHNL(estadisticas.ganancias_estimadas)}
-                  </p>
-                </div>
+                <p className="text-sm text-gray-600 mb-1">
+                  Ganancias Estimadas
+                </p>
+                <p className="text-3xl font-bold text-indigo-600">
+                  {formatHNL(estadisticas.ganancias_estimadas)}
+                </p>
+              </div>
             )}
           </div>
         )}
