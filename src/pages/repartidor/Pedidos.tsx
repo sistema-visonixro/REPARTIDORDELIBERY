@@ -1,4 +1,5 @@
 import "./driver.css";
+import { formatHNL } from "../../lib/currency";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
@@ -166,7 +167,7 @@ export default function Pedidos({
             <div className="order-info">
               <span className="badge">{nombreRest || "Pedido"}</span>
               <span style={{ fontWeight: "bold", color: "var(--success)" }}>
-                ${p.total?.toFixed(2) || "0.00"}
+                {formatHNL(p.total)}
               </span>
             </div>
 

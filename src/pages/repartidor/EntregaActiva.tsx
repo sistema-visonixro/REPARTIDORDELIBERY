@@ -9,6 +9,7 @@ import {
 import type { PedidoRepartidor } from "../../types/repartidor.types";
 import { useAuth } from "../../context/AuthContext";
 import MapaRutaProfesional from "../../components/MapaRutaProfesional";
+import { formatHNL } from "../../lib/currency";
 
 export default function EntregaActiva() {
   const { pedidoId } = useParams<{ pedidoId: string }>();
@@ -133,7 +134,7 @@ export default function EntregaActiva() {
           </div>
           <div className="text-right">
             <p className="text-3xl font-bold text-indigo-600">
-              ${pedido.total.toFixed(2)}
+              {formatHNL(pedido.total)}
             </p>
             <p className="text-sm text-gray-500">{pedido.total_items} items</p>
           </div>

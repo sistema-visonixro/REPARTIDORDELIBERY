@@ -8,6 +8,7 @@ import {
 import type { Repartidor } from "../../types/repartidor.types";
 import { useAuth } from "../../context/AuthContext";
 import Header from "../../components/Header";
+import { formatHNL } from "../../lib/currency";
 
 interface Estadisticas {
   entregas_completadas: number;
@@ -192,13 +193,13 @@ export default function PerfilRepartidor() {
 
             {estadisticas.ganancias_estimadas > 0 && (
               <div className="mt-4 bg-indigo-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600 mb-1">
-                  Ganancias Estimadas
-                </p>
-                <p className="text-3xl font-bold text-indigo-600">
-                  ${estadisticas.ganancias_estimadas.toFixed(2)}
-                </p>
-              </div>
+                  <p className="text-sm text-gray-600 mb-1">
+                    Ganancias Estimadas
+                  </p>
+                  <p className="text-3xl font-bold text-indigo-600">
+                    {formatHNL(estadisticas.ganancias_estimadas)}
+                  </p>
+                </div>
             )}
           </div>
         )}

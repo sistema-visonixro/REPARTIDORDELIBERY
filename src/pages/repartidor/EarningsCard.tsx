@@ -1,10 +1,11 @@
 import "./driver.css";
+import { formatHNL } from "../../lib/currency";
 
 export default function EarningsCard() {
   return (
     <div className="earnings-card">
       <p>Ganancias de hoy</p>
-      <h2>$124.80</h2>
+      <h2>{formatHNL(124.8)}</h2>
       <div
         style={{ display: "flex", gap: 15, marginTop: 10, fontSize: "0.8rem" }}
       >

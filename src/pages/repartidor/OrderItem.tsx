@@ -1,4 +1,5 @@
 import "./driver.css";
+import { formatHNL } from "../../lib/currency";
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabase";
 
@@ -49,7 +50,7 @@ export default function Pedidos() {
           <div className="order-info">
             <span className="badge">{p.restaurante || "Pedido"}</span>
             <span style={{ fontWeight: "bold", color: "var(--success)" }}>
-              ${p.total?.toFixed(2) || "0.00"}
+              {formatHNL(p.total)}
             </span>
           </div>
 

@@ -7,6 +7,7 @@ import {
 import type { PedidoDisponible } from "../../types/repartidor.types";
 import { useAuth } from "../../context/AuthContext";
 import Header from "../../components/Header";
+import { formatHNL } from "../../lib/currency";
 
 export default function PedidosDisponibles() {
   const { usuario } = useAuth();
@@ -107,7 +108,7 @@ export default function PedidosDisponibles() {
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-indigo-600">
-                      ${pedido.total.toFixed(2)}
+                      {formatHNL(pedido.total)}
                     </p>
                     <p className="text-sm text-gray-500">
                       {pedido.total_items} item
