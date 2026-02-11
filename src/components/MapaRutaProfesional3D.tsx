@@ -396,6 +396,77 @@ export default function MapaRutaProfesional3D({
     }
   };
 
+  // Dibujar ruta entre repartidor y destino usando OSRM
+  const drawRouteTo = async (toLat: number, toLng: number) => {
+    if (!mapRef.current || !repartidorPos) return;
+    try {
+      const from = `${repartidorPos.lng},${repartidorPos.lat}`;
+      const to = `${toLng},${toLat}`;
+      const url = `https://router.project-osrm.org/route/v1/driving/${from};${to}?overview=full&geometries=geojson`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`OSRM error ${res.status}`);
+      const data = await res.json();
+      const coords = data?.routes?.[0]?.geometry;
+      if (!coords) {
+        console.error("No route geometry from OSRM", data);
+        return;
+      }
+
+      const map = mapRef.current;
+
+      // add or update source
+      if (map.getSource("route")) {
+        const source = map.getSource("route") as maplibregl.GeoJSONSource;
+        source.setData({ type: 'Feature', properties: {}, geometry: coords });
+      } else {
+        map.addSource("route", {
+          type: "geojson",
+          data: { type: 'Feature', properties: {}, geometry: coords },
+        } as any);
+
+        map.addLayer({
+          id: "route-line",
+          type: "line",
+          source: "route",
+          layout: {
+            "line-join": "round",
+            "line-cap": "round",
+          },
+          paint: {
+            "line-color": "#007bff",
+            "line-width": 6,
+            "line-opacity": 0.95,
+          },
+        });
+      }
+
+      // Ajustar vista para mostrar ruta completa
+      try {
+        const bbox = coords.coordinates.reduce(
+          (acc: number[], cur: number[]) => {
+            if (cur[0] < acc[0]) acc[0] = cur[0];
+            if (cur[1] < acc[1]) acc[1] = cur[1];
+            if (cur[0] > acc[2]) acc[2] = cur[0];
+            if (cur[1] > acc[3]) acc[3] = cur[1];
+            return acc;
+          },
+          [Infinity, Infinity, -Infinity, -Infinity],
+        );
+        map.fitBounds(
+          [
+            [bbox[0], bbox[1]],
+            [bbox[2], bbox[3]],
+          ],
+          { padding: 80, duration: 1000 },
+        );
+      } catch (err) {
+        // ignore fitBounds errors
+      }
+    } catch (err) {
+      console.error("Error obteniendo ruta OSRM:", err);
+    }
+  };
+
   console.log("🎨 Renderizando contenedor del mapa");
 
   return (
@@ -436,7 +507,10 @@ export default function MapaRutaProfesional3D({
           typeof restauranteLng === "number" && (
             <div
               className="legend-item legend-item-clickable"
-              onClick={() => flyToLocation(restauranteLat, restauranteLng)}
+              onClick={() => {
+                flyToLocation(restauranteLat, restauranteLng);
+                drawRouteTo(restauranteLat, restauranteLng);
+              }}
               title="Ir a ubicación del restaurante"
             >
               <span className="legend-icon">🍽️</span>
@@ -455,7 +529,10 @@ export default function MapaRutaProfesional3D({
         )}
         <div
           className="legend-item legend-item-clickable"
-          onClick={() => flyToLocation(clienteLat, clienteLng)}
+          onClick={() => {
+            flyToLocation(clienteLat, clienteLng);
+            drawRouteTo(clienteLat, clienteLng);
+          }}
           title="Ir a ubicación del cliente"
         >
           <span className="legend-icon">👤</span>
