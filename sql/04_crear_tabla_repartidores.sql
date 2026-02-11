@@ -5,7 +5,7 @@
 
 CREATE TABLE IF NOT EXISTS repartidores (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  usuario_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL UNIQUE,
   
   -- Información personal
   nombre_completo VARCHAR(255) NOT NULL,

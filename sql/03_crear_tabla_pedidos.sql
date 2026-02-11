@@ -5,9 +5,9 @@
 
 CREATE TABLE IF NOT EXISTS pedidos (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  usuario_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL,
   restaurante_id UUID NOT NULL REFERENCES restaurantes(id) ON DELETE CASCADE,
-  repartidor_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  repartidor_id UUID,
   
   -- Información del pedido
   numero_pedido VARCHAR(50) UNIQUE NOT NULL,

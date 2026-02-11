@@ -20,6 +20,9 @@ DROP CONSTRAINT IF EXISTS carrito_usuario_id_fkey;
 ALTER TABLE pedidos 
 DROP CONSTRAINT IF EXISTS pedidos_usuario_id_fkey;
 
+ALTER TABLE pedidos 
+DROP CONSTRAINT IF EXISTS pedidos_repartidor_id_fkey;
+
 -- =====================================================
 -- 3. REPARTIDORES
 -- =====================================================
@@ -31,6 +34,21 @@ DROP CONSTRAINT IF EXISTS repartidores_usuario_id_fkey;
 -- =====================================================
 ALTER TABLE notificaciones 
 DROP CONSTRAINT IF EXISTS notificaciones_usuario_id_fkey;
+
+-- =====================================================
+-- 6. PEDIDOS_REALIZADOS_DE_REPARTIDOR (si existe)
+-- =====================================================
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'pedidos_realizados_de_repartidor'
+  ) THEN
+    EXECUTE 'ALTER TABLE pedidos_realizados_de_repartidor DROP CONSTRAINT IF EXISTS pedidos_realizados_de_repartidor_repartidor_id_fkey';
+  END IF;
+END $$;
 
 -- =====================================================
 -- 5. PERFILES_USUARIO (si existe)

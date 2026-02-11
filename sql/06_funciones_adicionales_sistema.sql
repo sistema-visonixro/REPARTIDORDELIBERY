@@ -90,7 +90,7 @@ CREATE POLICY "Usuarios pueden crear su perfil"
 -- =====================================================
 CREATE TABLE IF NOT EXISTS notificaciones (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  usuario_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  usuario_id UUID NOT NULL,
   
   -- Contenido
   tipo VARCHAR(50) NOT NULL,
