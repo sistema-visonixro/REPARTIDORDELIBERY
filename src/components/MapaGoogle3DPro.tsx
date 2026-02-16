@@ -28,7 +28,7 @@ export default function MapaGoogle3DPro({
   const directionsServiceRef = useRef<any>(null);
   const directionsRendererRef = useRef<any>(null);
   const repartidorMarkerRef = useRef<any>(null);
-  
+
   const [repartidorPos, setRepartidorPos] = useState<{
     lat: number;
     lng: number;
@@ -37,9 +37,9 @@ export default function MapaGoogle3DPro({
   const [distancia, setDistancia] = useState<string>("");
   const [duracion, setDuracion] = useState<string>("");
   const [showStreetView, setShowStreetView] = useState(false);
-  const [mapTilt, setMapTilt] = useState(45);
-  const [mapHeading, setMapHeading] = useState(0);
-  const [tipoRuta, setTipoRuta] = useState<"cliente" | "restaurante">("cliente");
+  const [tipoRuta, setTipoRuta] = useState<"cliente" | "restaurante">(
+    "cliente",
+  );
 
   // Cargar ubicación del repartidor
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function MapaGoogle3DPro({
                 lng: Number(payload.new.longitud),
               });
             }
-          }
+          },
         )
         .subscribe();
 
@@ -106,7 +106,8 @@ export default function MapaGoogle3DPro({
 
     const initMap = async () => {
       const { Map } = await window.google.maps.importLibrary("maps");
-      const { AdvancedMarkerElement, PinElement } = await window.google.maps.importLibrary("marker");
+      const { AdvancedMarkerElement, PinElement } =
+        await window.google.maps.importLibrary("marker");
 
       // Calcular centro
       const centerLat = repartidorPos
@@ -121,8 +122,8 @@ export default function MapaGoogle3DPro({
         center: { lat: centerLat, lng: centerLng },
         zoom: 15,
         mapId: "DEMO_MAP_ID", // Necesario para 3D
-        tilt: mapTilt,
-        heading: mapHeading,
+        tilt: 45,
+        heading: 0,
         mapTypeId: "satellite",
         fullscreenControl: true,
         mapTypeControl: true,
@@ -140,15 +141,17 @@ export default function MapaGoogle3DPro({
 
       // Servicios de direcciones
       directionsServiceRef.current = new window.google.maps.DirectionsService();
-      directionsRendererRef.current = new window.google.maps.DirectionsRenderer({
-        map: map,
-        suppressMarkers: true,
-        polylineOptions: {
-          strokeColor: "#667eea",
-          strokeWeight: 6,
-          strokeOpacity: 0.9,
+      directionsRendererRef.current = new window.google.maps.DirectionsRenderer(
+        {
+          map: map,
+          suppressMarkers: true,
+          polylineOptions: {
+            strokeColor: "#667eea",
+            strokeWeight: 6,
+            strokeOpacity: 0.9,
+          },
         },
-      });
+      );
 
       // Marcador del restaurante
       if (restauranteLat && restauranteLng) {
@@ -213,7 +216,12 @@ export default function MapaGoogle3DPro({
 
       // Marcador del repartidor (si existe)
       if (repartidorPos) {
-        crearMarcadorRepartidor(map, repartidorPos, PinElement, AdvancedMarkerElement);
+        crearMarcadorRepartidor(
+          map,
+          repartidorPos,
+          PinElement,
+          AdvancedMarkerElement,
+        );
         calcularRuta();
       }
 
@@ -249,8 +257,9 @@ export default function MapaGoogle3DPro({
     if (!repartidorPos || !googleMapRef.current) return;
 
     const updateRepartidor = async () => {
-      const { AdvancedMarkerElement, PinElement } = await window.google.maps.importLibrary("marker");
-      
+      const { AdvancedMarkerElement, PinElement } =
+        await window.google.maps.importLibrary("marker");
+
       if (repartidorMarkerRef.current) {
         // Animar movimiento del marcador existente
         repartidorMarkerRef.current.position = {
@@ -263,7 +272,7 @@ export default function MapaGoogle3DPro({
           googleMapRef.current,
           repartidorPos,
           PinElement,
-          AdvancedMarkerElement
+          AdvancedMarkerElement,
         );
       }
 
@@ -274,7 +283,12 @@ export default function MapaGoogle3DPro({
     updateRepartidor();
   }, [repartidorPos]);
 
-  const crearMarcadorRepartidor = (map: any, pos: { lat: number; lng: number }, PinElement: any, AdvancedMarkerElement: any) => {
+  const crearMarcadorRepartidor = (
+    map: any,
+    pos: { lat: number; lng: number },
+    PinElement: any,
+    AdvancedMarkerElement: any,
+  ) => {
     const repartidorPinBackground = new PinElement({
       background: "#667eea",
       borderColor: "#5568D3",
@@ -308,7 +322,12 @@ export default function MapaGoogle3DPro({
   };
 
   const calcularRuta = () => {
-    if (!repartidorPos || !directionsServiceRef.current || !directionsRendererRef.current) return;
+    if (
+      !repartidorPos ||
+      !directionsServiceRef.current ||
+      !directionsRendererRef.current
+    )
+      return;
 
     const origin = { lat: repartidorPos.lat, lng: repartidorPos.lng };
     let destination;
@@ -336,7 +355,7 @@ export default function MapaGoogle3DPro({
           setDistancia(leg.distance.text);
           setDuracion(leg.duration.text);
         }
-      }
+      },
     );
   };
 
@@ -382,25 +401,12 @@ export default function MapaGoogle3DPro({
     }
   };
 
-  const rotarMapa = (direccion: "left" | "right") => {
-    if (!googleMapRef.current) return;
-    const currentHeading = googleMapRef.current.getHeading() || 0;
-    const newHeading = direccion === "left" ? currentHeading - 45 : currentHeading + 45;
-    googleMapRef.current.setHeading(newHeading);
-    setMapHeading(newHeading);
-  };
-
-  const cambiarInclinacion = (delta: number) => {
-    if (!googleMapRef.current) return;
-    const currentTilt = googleMapRef.current.getTilt() || 0;
-    const newTilt = Math.max(0, Math.min(67.5, currentTilt + delta));
-    googleMapRef.current.setTilt(newTilt);
-    setMapTilt(newTilt);
-  };
-
   const centrarEnRepartidor = () => {
     if (!googleMapRef.current || !repartidorPos) return;
-    googleMapRef.current.panTo({ lat: repartidorPos.lat, lng: repartidorPos.lng });
+    googleMapRef.current.panTo({
+      lat: repartidorPos.lat,
+      lng: repartidorPos.lng,
+    });
     googleMapRef.current.setZoom(17);
   };
 
@@ -425,12 +431,6 @@ export default function MapaGoogle3DPro({
       {/* Contenedor del mapa */}
       <div className="mapa-google-3d-container">
         <div ref={mapRef} className="mapa-google-3d"></div>
-
-        {/* Indicador de vista 3D */}
-        <div className="vista-3d-badge">
-          <span className="badge-icon">🎮</span>
-          <span className="badge-text">Vista 3D Activa</span>
-        </div>
       </div>
 
       {/* Panel de controles - Fuera del mapa */}
@@ -448,14 +448,18 @@ export default function MapaGoogle3DPro({
                   <span className="stat-icon">📍</span>
                   <div className="stat-content">
                     <span className="stat-label">Distancia</span>
-                    <span className="stat-value">{distancia || "Calculando..."}</span>
+                    <span className="stat-value">
+                      {distancia || "Calculando..."}
+                    </span>
                   </div>
                 </div>
                 <div className="info-stat-card">
                   <span className="stat-icon">⏱️</span>
                   <div className="stat-content">
                     <span className="stat-label">Tiempo estimado</span>
-                    <span className="stat-value">{duracion || "Calculando..."}</span>
+                    <span className="stat-value">
+                      {duracion || "Calculando..."}
+                    </span>
                   </div>
                 </div>
                 <div className="info-stat-card">
@@ -505,48 +509,6 @@ export default function MapaGoogle3DPro({
                 <span className="ruta-title">Ruta al Restaurante</span>
                 <span className="ruta-desc">Punto de recogida</span>
               </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Controles 3D */}
-        <div className="controles-grupo">
-          <div className="grupo-header">
-            <span className="grupo-icon">🎮</span>
-            <h4>Controles 3D</h4>
-          </div>
-          <div className="controles-grid">
-            <button
-              className="control-btn-nuevo"
-              onClick={() => rotarMapa("left")}
-              title="Rotar izquierda"
-            >
-              <span className="btn-icon">↶</span>
-              <span className="btn-label">Rotar Izq</span>
-            </button>
-            <button
-              className="control-btn-nuevo"
-              onClick={() => rotarMapa("right")}
-              title="Rotar derecha"
-            >
-              <span className="btn-icon">↷</span>
-              <span className="btn-label">Rotar Der</span>
-            </button>
-            <button
-              className="control-btn-nuevo"
-              onClick={() => cambiarInclinacion(15)}
-              title="Inclinar más"
-            >
-              <span className="btn-icon">⬆</span>
-              <span className="btn-label">Inclinar +</span>
-            </button>
-            <button
-              className="control-btn-nuevo"
-              onClick={() => cambiarInclinacion(-15)}
-              title="Inclinar menos"
-            >
-              <span className="btn-icon">⬇</span>
-              <span className="btn-label">Inclinar -</span>
             </button>
           </div>
         </div>

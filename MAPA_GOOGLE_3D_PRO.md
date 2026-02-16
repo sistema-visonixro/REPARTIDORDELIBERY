@@ -3,12 +3,14 @@
 ## ✨ Características Implementadas
 
 ### 🌍 Vista 3D Inmersiva
+
 - **Inclinación (Tilt)**: Vista con perspectiva de 45° que simula una vista aérea oblicua
 - **Rotación (Heading)**: Control completo de rotación en 360°
 - **Animación inicial**: Rotación automática de 360° al cargar el mapa para mostrar el entorno
 - **Vistas múltiples**: Roadmap, Satellite, Hybrid y Terrain
 
 ### 🎯 Marcadores 3D Avanzados
+
 - **Advanced Marker Element**: Última tecnología de Google Maps para marcadores
 - **Marcadores personalizados**:
   - 🍽️ **Restaurante**: Pin rojo con efecto 3D
@@ -17,9 +19,10 @@
 - **Info Windows**: Ventanas de información con diseño moderno y animaciones
 
 ### 🛣️ Sistema de Rutas Inteligente
+
 - **Directions API**: Calcula la ruta óptima en tiempo real
 - **Ruta visual**: Línea morada (#667eea) con grosor de 6px
-- **Selector de Rutas**: 
+- **Selector de Rutas**:
   - 🏠 **Ruta al Cliente**: Desde repartidor hasta punto de entrega
   - 🍽️ **Ruta al Restaurante**: Desde repartidor hasta punto de recogida
   - Cambio instantáneo entre rutas con un click
@@ -30,26 +33,31 @@
 - **Actualización automática**: Recalcula la ruta cuando el repartidor se mueve o cambia el destino
 
 ### 🎮 Controles Interactivos (Fuera del Mapa)
+
 Los controles ahora están organizados profesionalmente **fuera del mapa** en la parte inferior:
 
 #### Panel de Selección de Ruta
+
 - **Botones grandes e interactivos** con iconos y descripciones
 - **Indicador visual** del destino activo (gradiente morado)
 - **Animaciones suaves** al cambiar de ruta
 - **Estado disabled** cuando no hay datos disponibles
 
 #### Controles 3D
+
 - **↶ Rotar Izq**: Gira el mapa 45° a la izquierda
 - **↷ Rotar Der**: Gira el mapa 45° a la derecha
 - **⬆ Inclinar +**: Aumenta el ángulo de vista 3D
 - **⬇ Inclinar -**: Disminuye el ángulo de vista 3D
 
 #### Acciones Rápidas
+
 - **🎯 Centrar**: Centra y hace zoom en la posición del repartidor
 - **🛰️ Vista**: Alterna entre vista de mapa y satélite
 - **👁️ Street View**: Activa/desactiva Street View en la ubicación del repartidor
 
 ### 📊 Panel de Información Glassmorphism
+
 - **Diseño moderno**: Fondo difuminado con efecto glassmorphism
 - **Indicador de estado**: Punto verde pulsante que muestra actividad en vivo
 - **Información en tiempo real**:
@@ -58,6 +66,7 @@ Los controles ahora están organizados profesionalmente **fuera del mapa** en la
 - **Animación de entrada**: Desliza desde la izquierda con efecto suave
 
 ### 🔄 Tracking en Tiempo Real
+
 - **Supabase Realtime**: Suscripción a cambios en la tabla `ubicacion_real`
 - **Actualización automática**: Sin necesidad de recargar la página
 - **Animación fluida**: Transiciones suaves del marcador del repartidor
@@ -66,6 +75,7 @@ Los controles ahora están organizados profesionalmente **fuera del mapa** en la
 ### 🎨 Efectos Visuales Premium
 
 #### Diseño de Controles Profesional
+
 - **Controles externos**: Totalmente fuera del mapa, no obstruyen la vista
 - **Layout Grid**: Sistema de rejilla adaptativo para los botones
 - **Glassmorphism Cards**: Tarjetas con efecto de vidrio para cada sección
@@ -74,6 +84,7 @@ Los controles ahora están organizados profesionalmente **fuera del mapa** en la
 - **Animaciones de onda**: Efecto ripple al hacer click en los botones
 
 #### Animaciones CSS
+
 - **Pulso**: Efecto de latido en el indicador de estado
 - **Float**: Iconos flotantes en info windows
 - **Spin**: Icono de carga giratorio
@@ -84,17 +95,20 @@ Los controles ahora están organizados profesionalmente **fuera del mapa** en la
 - **Ripple**: Onda expansiva en botones al hacer click
 
 #### Glassmorphism
+
 - **Backdrop-filter**: Desenfoque de 20px
 - **Semi-transparencia**: rgba(255, 255, 255, 0.95)
 - **Bordes suaves**: border-radius de 16px
 - **Sombras multicapa**: box-shadow con múltiples capas
 
 ### 🌓 Modo Oscuro
+
 - **Detección automática**: prefers-color-scheme: dark
 - **Paleta adaptativa**: Colores que se ajustan al tema del sistema
 - **Contraste mejorado**: Mejor legibilidad en ambientes oscuros
 
 ### 📱 Diseño Responsivo
+
 - **Desktop**: 700px de altura, controles grandes
 - **Tablet**: 500px de altura, controles medianos
 - **Mobile**: 400px de altura, controles compactos
@@ -107,6 +121,7 @@ AIzaSyD9ZMr4EAvpCy-AW5dg2IsSJeC9bPTUFOQ
 ```
 
 ### Librerías activadas:
+
 - `maps` - Mapa base con 3D
 - `places` - Lugares y geocodificación
 - `geometry` - Cálculos geométricos
@@ -115,6 +130,7 @@ AIzaSyD9ZMr4EAvpCy-AW5dg2IsSJeC9bPTUFOQ
 ## 🚀 Tecnologías Utilizadas
 
 ### Google Maps JavaScript API
+
 - **Map**: Vista 3D con tilt y heading
 - **AdvancedMarkerElement**: Marcadores modernos con 3D
 - **PinElement**: Pins personalizables con colores
@@ -124,17 +140,20 @@ AIzaSyD9ZMr4EAvpCy-AW5dg2IsSJeC9bPTUFOQ
 - **StreetViewPanorama**: Vista de calle integrada
 
 ### React & TypeScript
+
 - **useEffect**: Gestión de ciclo de vida
 - **useState**: Estado reactivo
 - **useRef**: Referencias a elementos del DOM y objetos de Google Maps
 - **TypeScript**: Tipado fuerte para seguridad
 
 ### Supabase Realtime
+
 - **WebSocket**: Conexión en tiempo real
 - **Channel**: Suscripción a cambios de ubicación
 - **postgres_changes**: Eventos de actualización
 
 ### CSS Moderno
+
 - **Backdrop-filter**: Efectos de desenfoque
 - **Gradients**: Colores degradados
 - **Keyframes**: Animaciones personalizadas
@@ -148,22 +167,22 @@ import MapaGoogle3DPro from "../../components/MapaGoogle3DPro";
 
 <MapaGoogle3DPro
   clienteLat={40.7128}
-  clienteLng={-74.0060}
-  restauranteLat={40.7580}
+  clienteLng={-74.006}
+  restauranteLat={40.758}
   restauranteLng={-73.9855}
   repartidorId="user-uuid-123"
-/>
+/>;
 ```
 
 ### Props
 
-| Prop | Tipo | Requerido | Descripción |
-|------|------|-----------|-------------|
-| `clienteLat` | `number` | ✅ | Latitud del cliente |
-| `clienteLng` | `number` | ✅ | Longitud del cliente |
-| `restauranteLat` | `number \| null` | ❌ | Latitud del restaurante |
-| `restauranteLng` | `number \| null` | ❌ | Longitud del restaurante |
-| `repartidorId` | `string \| null` | ❌ | ID del repartidor para tracking |
+| Prop             | Tipo             | Requerido | Descripción                     |
+| ---------------- | ---------------- | --------- | ------------------------------- |
+| `clienteLat`     | `number`         | ✅        | Latitud del cliente             |
+| `clienteLng`     | `number`         | ✅        | Longitud del cliente            |
+| `restauranteLat` | `number \| null` | ❌        | Latitud del restaurante         |
+| `restauranteLng` | `number \| null` | ❌        | Longitud del restaurante        |
+| `repartidorId`   | `string \| null` | ❌        | ID del repartidor para tracking |
 
 ## 🎯 Funcionalidades Interactivas
 
@@ -171,7 +190,7 @@ import MapaGoogle3DPro from "../../components/MapaGoogle3DPro";
 
 El mapa ahora permite **cambiar entre dos rutas** diferentes:
 
-1. **Ruta al Cliente (Por defecto)**: 
+1. **Ruta al Cliente (Por defecto)**:
    - Muestra la ruta desde la ubicación actual del repartidor hasta el punto de entrega del cliente
    - Botón con icono 🏠 y gradiente morado cuando está activo
    - Calcula distancia y tiempo automáticamente
@@ -182,6 +201,7 @@ El mapa ahora permite **cambiar entre dos rutas** diferentes:
    - Útil para cuando el repartidor debe ir a recoger el pedido
 
 **Cómo usar:**
+
 - Click en cualquiera de los dos botones grandes en la sección "Seleccionar Ruta"
 - El mapa recalcula la ruta automáticamente
 - El panel de información se actualiza con la nueva distancia y tiempo
@@ -292,21 +312,25 @@ En [MapaGoogle3DPro.css](src/components/MapaGoogle3DPro.css):
 ## 🐛 Troubleshooting
 
 ### El mapa no se carga
+
 1. Verificar que la API key esté en [index.html](index.html)
 2. Verificar que las librerías estén incluidas: `places,geometry,marker`
 3. Abrir la consola del navegador para ver errores
 
 ### Los marcadores no aparecen
+
 1. Verificar que las coordenadas sean válidas
 2. Verificar que `window.google.maps` esté cargado
 3. Esperar a que el mapa termine de cargar
 
 ### La ruta no se muestra
+
 1. Verificar que `repartidorId` sea válido
 2. Verificar que exista una entrada en `ubicacion_real`
 3. Verificar que las coordenadas del repartidor sean válidas
 
 ### Street View no funciona
+
 1. Verificar que haya cobertura de Street View en la ubicación
 2. Verificar que `repartidorPos` no sea null
 3. Algunos lugares no tienen Street View disponible
@@ -326,7 +350,7 @@ En [MapaGoogle3DPro.css](src/components/MapaGoogle3DPro.css):
 ✅ **Modo Oscuro** automático  
 ✅ **Info Windows** personalizadas  
 ✅ **Actualización en Tiempo Real** de rutas  
-✅ **Layout Grid Adaptativo** para botones  
+✅ **Layout Grid Adaptativo** para botones
 
 ## 📈 Próximas Mejoras Posibles
 
@@ -336,7 +360,7 @@ En [MapaGoogle3DPro.css](src/components/MapaGoogle3DPro.css):
 🔮 **Weather Overlay**: Capa de clima  
 🔮 **Heatmap**: Mapa de calor de entregas  
 🔮 **Route Alternatives**: Rutas alternativas  
-🔮 **Voice Navigation**: Navegación por voz  
+🔮 **Voice Navigation**: Navegación por voz
 
 ## 📝 Notas Importantes
 

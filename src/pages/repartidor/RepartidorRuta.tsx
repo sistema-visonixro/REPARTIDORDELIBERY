@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import MapaGoogle3DPro from "../../components/MapaGoogle3DPro";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
+import { FaArrowLeft } from "react-icons/fa";
 import "./driver.css";
 
 export default function RepartidorRuta() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clienteLat, setClienteLat] = useState<number | null>(null);
@@ -79,7 +81,47 @@ export default function RepartidorRuta() {
 
   return (
     <div className="mobile-viewport">
-      <h3 style={{ marginBottom: 8 }}>Ruta del Pedido</h3>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: "12px",
+          marginBottom: 16,
+        }}
+      >
+        <button
+          onClick={() => navigate("/repartidor/pedidos")}
+          className="btn-back"
+          style={{
+            background: "var(--gradient)",
+            border: "none",
+            borderRadius: "12px",
+            width: "40px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            color: "white",
+            fontSize: "18px",
+            boxShadow: "0 4px 12px rgba(37, 99, 235, 0.3)",
+            transition: "all 0.3s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "scale(1.05)";
+            e.currentTarget.style.boxShadow =
+              "0 6px 16px rgba(37, 99, 235, 0.4)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "scale(1)";
+            e.currentTarget.style.boxShadow =
+              "0 4px 12px rgba(37, 99, 235, 0.3)";
+          }}
+        >
+          <FaArrowLeft />
+        </button>
+        <h3 style={{ margin: 0, flex: 1 }}>Ruta del Pedido</h3>
+      </div>
       <MapaGoogle3DPro
         clienteLat={clienteLat}
         clienteLng={clienteLng}

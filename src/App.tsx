@@ -23,74 +23,81 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  const { usuario } = useAuth();
+
   return (
-    <Routes>
-      <Route
-        path="/"
-        element={
-          <PublicRoute>
-            <Login />
-          </PublicRoute>
-        }
-      />
+    <>
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <PublicRoute>
+              <Login />
+            </PublicRoute>
+          }
+        />
 
-      {/* Route /home removed to simplify build */}
+        {/* Route /home removed to simplify build */}
 
-      <Route
-        path="/repartidor/dashboard"
-        element={
-          <RoleProtectedRoute allowedRoles={["repartidor"]}>
-            <DashboardRepartidor />
-          </RoleProtectedRoute>
-        }
-      />
+        <Route
+          path="/repartidor/dashboard"
+          element={
+            <RoleProtectedRoute allowedRoles={["repartidor"]}>
+              <DashboardRepartidor />
+            </RoleProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/repartidor/pedidos"
-        element={
-          <RoleProtectedRoute allowedRoles={["repartidor"]}>
-            <PedidosView />
-          </RoleProtectedRoute>
-        }
-      />
+        <Route
+          path="/repartidor/pedidos"
+          element={
+            <RoleProtectedRoute allowedRoles={["repartidor"]}>
+              <PedidosView />
+            </RoleProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/repartidor/cartera"
-        element={
-          <RoleProtectedRoute allowedRoles={["repartidor"]}>
-            <Cartera />
-          </RoleProtectedRoute>
-        }
-      />
+        <Route
+          path="/repartidor/cartera"
+          element={
+            <RoleProtectedRoute allowedRoles={["repartidor"]}>
+              <Cartera />
+            </RoleProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/repartidor/avisos"
-        element={
-          <RoleProtectedRoute allowedRoles={["repartidor"]}>
-            <Avisos />
-          </RoleProtectedRoute>
-        }
-      />
+        <Route
+          path="/repartidor/avisos"
+          element={
+            <RoleProtectedRoute allowedRoles={["repartidor"]}>
+              <Avisos />
+            </RoleProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/repartidor/cuenta"
-        element={
-          <RoleProtectedRoute allowedRoles={["repartidor"]}>
-            <Cuenta />
-          </RoleProtectedRoute>
-        }
-      />
+        <Route
+          path="/repartidor/cuenta"
+          element={
+            <RoleProtectedRoute allowedRoles={["repartidor"]}>
+              <Cuenta />
+            </RoleProtectedRoute>
+          }
+        />
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-      <Route
-        path="/repartidor/ruta/:id"
-        element={
-          <RoleProtectedRoute allowedRoles={["repartidor"]}>
-            <RepartidorRuta />
-          </RoleProtectedRoute>
-        }
-      />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/repartidor/ruta/:id"
+          element={
+            <RoleProtectedRoute allowedRoles={["repartidor"]}>
+              <RepartidorRuta />
+            </RoleProtectedRoute>
+          }
+        />
+      </Routes>
+
+      {/* Mostrar MobileNav solo si hay usuario autenticado */}
+      {usuario && <MobileNav />}
+    </>
   );
 }
 
@@ -101,7 +108,6 @@ function App() {
         <AuthProvider>
           <AppRoutes />
           <LocationTracker />
-          <MobileNav />
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>
