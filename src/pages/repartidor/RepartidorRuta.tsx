@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import MapaRutaProfesional3D from "../../components/MapaRutaProfesional3D";
+import MapaGoogle3DPro from "../../components/MapaGoogle3DPro";
 import { supabase } from "../../lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import "./driver.css";
@@ -80,7 +80,7 @@ export default function RepartidorRuta() {
   return (
     <div className="mobile-viewport">
       <h3 style={{ marginBottom: 8 }}>Ruta del Pedido</h3>
-      <MapaRutaProfesional3D
+      <MapaGoogle3DPro
         clienteLat={clienteLat}
         clienteLng={clienteLng}
         restauranteLat={restLat ?? undefined}
