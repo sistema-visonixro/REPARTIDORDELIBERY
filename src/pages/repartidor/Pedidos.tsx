@@ -16,6 +16,7 @@ type Pedido = {
   creado_en?: string;
   repartidor_id?: string;
   notas_cliente?: string | null;
+  tipo_pago?: string;
 };
 
 export default function Pedidos({
@@ -186,6 +187,69 @@ export default function Pedidos({
               </span>
             </div>
 
+            {/* Información del pedido */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "auto 1fr",
+                gap: "8px",
+                marginBottom: "12px",
+                padding: "12px",
+                background: "var(--card-bg-secondary)",
+                borderRadius: "12px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <div style={{ fontSize: "1.2rem" }}>📍</div>
+              <div>
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--text-dim)",
+                    margin: 0,
+                    marginBottom: 4,
+                  }}
+                >
+                  Dirección de entrega
+                </p>
+                <p
+                  style={{
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    color: "var(--text-main)",
+                    margin: 0,
+                  }}
+                >
+                  {p.direccion_entrega || "-"}
+                </p>
+              </div>
+
+              <div style={{ fontSize: "1.2rem" }}>💳</div>
+              <div>
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--text-dim)",
+                    margin: 0,
+                    marginBottom: 4,
+                  }}
+                >
+                  Tipo de pago
+                </p>
+                <p
+                  style={{
+                    fontSize: "0.95rem",
+                    fontWeight: 600,
+                    color: "var(--text-main)",
+                    margin: 0,
+                    textTransform: "capitalize",
+                  }}
+                >
+                  {p.tipo_pago || "Efectivo"}
+                </p>
+              </div>
+            </div>
+
             <div className="route-visual">
               <div className="point">
                 <p
@@ -196,7 +260,7 @@ export default function Pedidos({
                     marginBottom: 4,
                   }}
                 >
-                  {direccionRest}
+                  🏪 {direccionRest}
                 </p>
 
                 <p
@@ -212,22 +276,25 @@ export default function Pedidos({
               <div className="point destination">
                 <p
                   style={{
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                    color: "var(--text-main)",
-                    marginBottom: 4,
-                  }}
-                >
-                  {p.direccion_entrega || "-"}
-                </p>
-                <p
-                  style={{
-                    fontSize: "0.75rem",
+                    fontSize: "0.85rem",
                     color: "var(--text-dim)",
                     margin: 0,
                   }}
                 >
-                  <strong>Estado:</strong> {p.estado || "-"}
+                  <strong>Estado:</strong>{" "}
+                  <span
+                    style={{
+                      color:
+                        p.estado === "en_camino"
+                          ? "var(--success)"
+                          : p.estado === "listo"
+                            ? "var(--accent)"
+                            : "var(--text-main)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {p.estado || "-"}
+                  </span>
                 </p>
               </div>
             </div>
