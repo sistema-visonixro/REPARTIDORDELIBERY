@@ -122,6 +122,9 @@ export async function marcarPedidoEntregado(
       pedidoId,
       repartidorId,
     });
+
+    // La función SQL actualiza pedidos y registra en pedidos_realizados_de_repartidor
+    // usando costo_envio como ganancia del repartidor (columna total)
     const { data, error } = await supabase.rpc("marcar_pedido_entregado", {
       p_pedido_id: pedidoId,
       p_repartidor_id: repartidorId,

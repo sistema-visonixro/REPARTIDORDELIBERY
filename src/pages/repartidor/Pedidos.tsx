@@ -12,6 +12,7 @@ type Pedido = {
   restaurante?: string;
   direccion_entrega?: string;
   total?: number;
+  costo_envio?: number;
   estado?: string;
   creado_en?: string;
   repartidor_id?: string;
@@ -176,15 +177,52 @@ export default function Pedidos({
           <div key={p.id} className="order-item">
             <div className="order-info">
               <span className="badge">{nombreRest || "Pedido"}</span>
-              <span
-                style={{
-                  fontWeight: 800,
-                  fontSize: "1.1rem",
-                  color: "var(--success)",
-                }}
-              >
-                {formatHNL(p.total)}
-              </span>
+              <div style={{ textAlign: "right" }}>
+                <p
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "var(--text-dim)",
+                    margin: 0,
+                    marginBottom: 2,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Total a cobrar
+                </p>
+                <p
+                  style={{
+                    fontWeight: 800,
+                    fontSize: "1.15rem",
+                    color: "var(--success)",
+                    margin: 0,
+                  }}
+                >
+                  {formatHNL(p.total)}
+                </p>
+                <p
+                  style={{
+                    fontSize: "0.7rem",
+                    color: "var(--text-dim)",
+                    margin: 0,
+                    marginTop: 4,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  Tu ganancia
+                </p>
+                <p
+                  style={{
+                    fontWeight: 800,
+                    fontSize: "1rem",
+                    color: "#f59e0b",
+                    margin: 0,
+                  }}
+                >
+                  {formatHNL(p.costo_envio ?? 0)}
+                </p>
+              </div>
             </div>
 
             {/* Información del pedido */}
