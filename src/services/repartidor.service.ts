@@ -330,20 +330,34 @@ export function iniciarTrackingGPS(
 ): () => void {
   let watchId: number | null = null;
   let intervalId: number | null = null;
+  let lastSentAt = 0;
+  const intervalMs = Math.max(5, intervaloSegundos) * 1000;
+
+  const enviarUbicacion = async (position: GeolocationPosition) => {
+    const now = Date.now();
+    if (now - lastSentAt < intervalMs) return;
+
+    const accuracy = position.coords.accuracy;
+    if (accuracy && accuracy > 120) return;
+
+    await actualizarUbicacion(
+      repartidorId,
+      position.coords.latitude,
+      position.coords.longitude,
+      pedidoId,
+      position.coords.speed || undefined,
+      accuracy,
+    );
+
+    lastSentAt = now;
+  };
 
   // Usar watchPosition para actualizaciones automáticas del GPS
   if (navigator.geolocation) {
     watchId = navigator.geolocation.watchPosition(
       async (position) => {
         try {
-          await actualizarUbicacion(
-            repartidorId,
-            position.coords.latitude,
-            position.coords.longitude,
-            pedidoId,
-            position.coords.speed || undefined,
-            position.coords.accuracy,
-          );
+          await enviarUbicacion(position);
           console.log("Ubicación actualizada:", position.coords);
         } catch (error) {
           console.error("Error al actualizar ubicación:", error);
@@ -354,28 +368,31 @@ export function iniciarTrackingGPS(
       },
       {
         enableHighAccuracy: true,
-        timeout: 5000,
+        timeout: 8000,
         maximumAge: 0,
       },
     );
 
     // También enviar actualizaciones cada X segundos
     intervalId = setInterval(() => {
-      navigator.geolocation.getCurrentPosition(async (position) => {
-        try {
-          await actualizarUbicacion(
-            repartidorId,
-            position.coords.latitude,
-            position.coords.longitude,
-            pedidoId,
-            position.coords.speed || undefined,
-            position.coords.accuracy,
-          );
-        } catch (error) {
-          console.error("Error en actualización periódica:", error);
-        }
-      });
-    }, intervaloSegundos * 1000);
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          try {
+            await enviarUbicacion(position);
+          } catch (error) {
+            console.error("Error en actualización periódica:", error);
+          }
+        },
+        (error) => {
+          console.error("Error en getCurrentPosition:", error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 0,
+        },
+      );
+    }, intervalMs);
   }
 
   // Retornar función para detener el tracking

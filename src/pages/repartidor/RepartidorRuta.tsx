@@ -15,6 +15,7 @@ export default function RepartidorRuta() {
   const [clienteLng, setClienteLng] = useState<number | null>(null);
   const [restLat, setRestLat] = useState<number | null>(null);
   const [restLng, setRestLng] = useState<number | null>(null);
+  const [clienteUsuarioId, setClienteUsuarioId] = useState<string | null>(null);
 
   const { usuario } = useAuth();
 
@@ -34,25 +35,54 @@ export default function RepartidorRuta() {
 
         const pedido: any = data;
 
-        // obtener ubicacion del cliente desde tabla ubicacion_real si existe
-        if (pedido.usuario_id) {
+        const pedidoLat = Number(pedido.latitud);
+        const pedidoLng = Number(pedido.longitud);
+        const pedidoCoordsValid =
+          Number.isFinite(pedidoLat) && Number.isFinite(pedidoLng);
+
+        let clienteCoords: { lat: number; lng: number } | null = null;
+        const pedidoClienteUsuarioId = pedido.usuario_id as string | null;
+        setClienteUsuarioId(pedidoClienteUsuarioId);
+
+        // 0) Fuente primaria: vista de ubicación actual por pedido (si está disponible)
+        const { data: vistaActual } = await supabase
+          .from("vista_ubicacion_actual_pedido")
+          .select("cliente_latitud, cliente_longitud")
+          .eq("pedido_id", id)
+          .maybeSingle();
+
+        if (vistaActual) {
+          const lat = Number((vistaActual as any).cliente_latitud);
+          const lng = Number((vistaActual as any).cliente_longitud);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            clienteCoords = { lat, lng };
+          }
+        }
+
+        // 1) Tomar ubicación en vivo del cliente si existe
+        if (!clienteCoords && pedidoClienteUsuarioId) {
           const { data: udata, error: uerr } = await supabase
             .from("ubicacion_real")
             .select("latitud, longitud")
-            .eq("usuario_id", pedido.usuario_id)
-            .single();
+            .eq("usuario_id", pedidoClienteUsuarioId)
+            .maybeSingle();
 
           if (!uerr && udata) {
-            setClienteLat(Number(udata.latitud));
-            setClienteLng(Number(udata.longitud));
-          } else {
-            setClienteLat(pedido.latitud || null);
-            setClienteLng(pedido.longitud || null);
+            const lat = Number(udata.latitud);
+            const lng = Number(udata.longitud);
+            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+              clienteCoords = { lat, lng };
+            }
           }
-        } else {
-          setClienteLat(pedido.latitud || null);
-          setClienteLng(pedido.longitud || null);
         }
+
+        // 2) Fallback final: coordenadas guardadas en pedido
+        if (!clienteCoords && pedidoCoordsValid) {
+          clienteCoords = { lat: pedidoLat, lng: pedidoLng };
+        }
+
+        setClienteLat(clienteCoords?.lat ?? null);
+        setClienteLng(clienteCoords?.lng ?? null);
 
         const rest = pedido.restaurantes;
         if (rest && rest.latitud && rest.longitud) {
@@ -68,7 +98,58 @@ export default function RepartidorRuta() {
     };
 
     load();
-  }, [id]);
+  }, [id, usuario?.id]);
+
+  useEffect(() => {
+    if (!clienteUsuarioId) return;
+
+    const actualizarCliente = async () => {
+      const { data } = await supabase
+        .from("ubicacion_real")
+        .select("latitud, longitud")
+        .eq("usuario_id", clienteUsuarioId)
+        .maybeSingle();
+
+      if (!data) return;
+
+      const lat = Number(data.latitud);
+      const lng = Number(data.longitud);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        setClienteLat(lat);
+        setClienteLng(lng);
+      }
+    };
+
+    const channel = supabase
+      .channel(`tracking-cliente-${clienteUsuarioId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "ubicacion_real",
+          filter: `usuario_id=eq.${clienteUsuarioId}`,
+        },
+        (payload: any) => {
+          const nuevo = payload?.new;
+          if (!nuevo) return;
+          const lat = Number(nuevo.latitud);
+          const lng = Number(nuevo.longitud);
+          if (Number.isFinite(lat) && Number.isFinite(lng)) {
+            setClienteLat(lat);
+            setClienteLng(lng);
+          }
+        },
+      )
+      .subscribe();
+
+    const interval = window.setInterval(actualizarCliente, 5_000);
+
+    return () => {
+      supabase.removeChannel(channel);
+      clearInterval(interval);
+    };
+  }, [clienteUsuarioId]);
 
   if (loading) return <div className="order-item">Cargando ruta...</div>;
   if (error) return <div className="order-item">Error: {error}</div>;

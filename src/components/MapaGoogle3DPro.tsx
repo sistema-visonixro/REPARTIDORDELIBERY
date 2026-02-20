@@ -1,4 +1,17 @@
 import { useEffect, useState, useRef } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import {
+  FaBullseye,
+  FaClock,
+  FaHouse,
+  FaLocationCrosshairs,
+  FaMapLocationDot,
+  FaMotorcycle,
+  FaRulerCombined,
+  FaSatelliteDish,
+  FaStore,
+  FaStreetView,
+} from "react-icons/fa6";
 import "./MapaGoogle3DPro.css";
 import { supabase } from "../lib/supabase";
 
@@ -15,6 +28,12 @@ declare global {
     google: any;
   }
 }
+
+const iconMarkup = {
+  restaurante: renderToStaticMarkup(<FaStore />),
+  cliente: renderToStaticMarkup(<FaHouse />),
+  repartidor: renderToStaticMarkup(<FaMotorcycle />),
+};
 
 export default function MapaGoogle3DPro({
   clienteLat,
@@ -40,6 +59,17 @@ export default function MapaGoogle3DPro({
   const [tipoRuta, setTipoRuta] = useState<"cliente" | "restaurante">(
     "cliente",
   );
+
+  const crearContenidoMarcador = (
+    tipo: "restaurante" | "cliente" | "repartidor",
+  ) => {
+    const markerEl = document.createElement("div");
+    markerEl.className = `map-marker map-marker--${tipo}`;
+    markerEl.innerHTML = `
+      <span class="map-marker__icon">${iconMarkup[tipo]}</span>
+    `;
+    return markerEl;
+  };
 
   // Cargar ubicación del repartidor
   useEffect(() => {
@@ -106,7 +136,7 @@ export default function MapaGoogle3DPro({
 
     const initMap = async () => {
       const { Map } = await window.google.maps.importLibrary("maps");
-      const { AdvancedMarkerElement, PinElement } =
+      const { AdvancedMarkerElement } =
         await window.google.maps.importLibrary("marker");
 
       // Calcular centro
@@ -155,17 +185,10 @@ export default function MapaGoogle3DPro({
 
       // Marcador del restaurante
       if (restauranteLat && restauranteLng) {
-        const restaurantePinBackground = new PinElement({
-          background: "#FF6B6B",
-          borderColor: "#C92A2A",
-          glyphColor: "#FFF",
-          scale: 1.5,
-        });
-
         const restauranteMarker = new AdvancedMarkerElement({
           map: map,
           position: { lat: restauranteLat, lng: restauranteLng },
-          content: restaurantePinBackground.element,
+          content: crearContenidoMarcador("restaurante"),
           title: "Restaurante - Punto de recogida",
         });
 
@@ -173,7 +196,7 @@ export default function MapaGoogle3DPro({
         const restauranteInfo = new window.google.maps.InfoWindow({
           content: `
             <div class="info-window-3d">
-              <div class="info-icon">🍽️</div>
+              <div class="info-icon">${iconMarkup.restaurante}</div>
               <h3>Restaurante</h3>
               <p>Punto de recogida</p>
             </div>
@@ -186,24 +209,17 @@ export default function MapaGoogle3DPro({
       }
 
       // Marcador del cliente
-      const clientePinBackground = new PinElement({
-        background: "#51CF66",
-        borderColor: "#2F9E44",
-        glyphColor: "#FFF",
-        scale: 1.5,
-      });
-
       const clienteMarker = new AdvancedMarkerElement({
         map: map,
         position: { lat: clienteLat, lng: clienteLng },
-        content: clientePinBackground.element,
+        content: crearContenidoMarcador("cliente"),
         title: "Cliente - Destino de entrega",
       });
 
       const clienteInfo = new window.google.maps.InfoWindow({
         content: `
           <div class="info-window-3d">
-            <div class="info-icon">🏠</div>
+            <div class="info-icon">${iconMarkup.cliente}</div>
             <h3>Cliente</h3>
             <p>Destino de entrega</p>
           </div>
@@ -216,12 +232,7 @@ export default function MapaGoogle3DPro({
 
       // Marcador del repartidor (si existe)
       if (repartidorPos) {
-        crearMarcadorRepartidor(
-          map,
-          repartidorPos,
-          PinElement,
-          AdvancedMarkerElement,
-        );
+        crearMarcadorRepartidor(map, repartidorPos, AdvancedMarkerElement);
         calcularRuta();
       }
 
@@ -257,7 +268,7 @@ export default function MapaGoogle3DPro({
     if (!repartidorPos || !googleMapRef.current) return;
 
     const updateRepartidor = async () => {
-      const { AdvancedMarkerElement, PinElement } =
+      const { AdvancedMarkerElement } =
         await window.google.maps.importLibrary("marker");
 
       if (repartidorMarkerRef.current) {
@@ -271,7 +282,6 @@ export default function MapaGoogle3DPro({
         crearMarcadorRepartidor(
           googleMapRef.current,
           repartidorPos,
-          PinElement,
           AdvancedMarkerElement,
         );
       }
@@ -286,27 +296,19 @@ export default function MapaGoogle3DPro({
   const crearMarcadorRepartidor = (
     map: any,
     pos: { lat: number; lng: number },
-    PinElement: any,
     AdvancedMarkerElement: any,
   ) => {
-    const repartidorPinBackground = new PinElement({
-      background: "#667eea",
-      borderColor: "#5568D3",
-      glyphColor: "#FFF",
-      scale: 1.8,
-    });
-
     const marker = new AdvancedMarkerElement({
       map: map,
       position: { lat: pos.lat, lng: pos.lng },
-      content: repartidorPinBackground.element,
+      content: crearContenidoMarcador("repartidor"),
       title: "Repartidor - En camino",
     });
 
     const repartidorInfo = new window.google.maps.InfoWindow({
       content: `
         <div class="info-window-3d">
-          <div class="info-icon">🚚</div>
+          <div class="info-icon">${iconMarkup.repartidor}</div>
           <h3>Repartidor</h3>
           <p>En camino a tu ubicación</p>
           ${distancia ? `<p><strong>${distancia}</strong> - ${duracion}</p>` : ""}
@@ -389,16 +391,41 @@ export default function MapaGoogle3DPro({
   const toggleStreetView = () => {
     if (!googleMapRef.current) return;
 
-    if (!showStreetView && repartidorPos) {
-      const panorama = googleMapRef.current.getStreetView();
-      panorama.setPosition({ lat: repartidorPos.lat, lng: repartidorPos.lng });
-      panorama.setVisible(true);
-      setShowStreetView(true);
-    } else {
-      const panorama = googleMapRef.current.getStreetView();
+    const panorama = googleMapRef.current.getStreetView();
+
+    if (showStreetView) {
       panorama.setVisible(false);
       setShowStreetView(false);
+      return;
     }
+
+    if (!repartidorPos || !window.google?.maps?.StreetViewService) return;
+
+    const sv = new window.google.maps.StreetViewService();
+    const target = new window.google.maps.LatLng(
+      repartidorPos.lat,
+      repartidorPos.lng,
+    );
+
+    sv.getPanorama(
+      {
+        location: target,
+        radius: 120,
+        source: window.google.maps.StreetViewSource.OUTDOOR,
+      },
+      (data: any, status: any) => {
+        if (status !== "OK" || !data?.location?.latLng) {
+          console.warn("Street View no disponible cerca de esta ubicación");
+          return;
+        }
+
+        panorama.setPosition(data.location.latLng);
+        panorama.setPov({ heading: 0, pitch: 0 });
+        panorama.setZoom(1);
+        panorama.setVisible(true);
+        setShowStreetView(true);
+      },
+    );
   };
 
   const centrarEnRepartidor = () => {
@@ -431,6 +458,14 @@ export default function MapaGoogle3DPro({
       {/* Contenedor del mapa */}
       <div className="mapa-google-3d-container">
         <div ref={mapRef} className="mapa-google-3d"></div>
+        <button
+          className="map-center-fab"
+          onClick={centrarEnRepartidor}
+          title="Centrar en repartidor"
+          disabled={!repartidorPos}
+        >
+          <FaLocationCrosshairs />
+        </button>
       </div>
 
       {/* Panel de controles - Fuera del mapa */}
@@ -445,7 +480,9 @@ export default function MapaGoogle3DPro({
             <>
               <div className="info-stats-grid">
                 <div className="info-stat-card">
-                  <span className="stat-icon">📍</span>
+                  <span className="stat-icon">
+                    <FaRulerCombined />
+                  </span>
                   <div className="stat-content">
                     <span className="stat-label">Distancia</span>
                     <span className="stat-value">
@@ -454,7 +491,9 @@ export default function MapaGoogle3DPro({
                   </div>
                 </div>
                 <div className="info-stat-card">
-                  <span className="stat-icon">⏱️</span>
+                  <span className="stat-icon">
+                    <FaClock />
+                  </span>
                   <div className="stat-content">
                     <span className="stat-label">Tiempo estimado</span>
                     <span className="stat-value">
@@ -463,7 +502,9 @@ export default function MapaGoogle3DPro({
                   </div>
                 </div>
                 <div className="info-stat-card">
-                  <span className="stat-icon">🎯</span>
+                  <span className="stat-icon">
+                    <FaBullseye />
+                  </span>
                   <div className="stat-content">
                     <span className="stat-label">Destino</span>
                     <span className="stat-value">
@@ -484,7 +525,9 @@ export default function MapaGoogle3DPro({
         {/* Selector de Ruta */}
         <div className="selector-ruta">
           <div className="selector-header">
-            <span className="selector-icon">🗺️</span>
+            <span className="selector-icon">
+              <FaMapLocationDot />
+            </span>
             <h4>Seleccionar Ruta</h4>
           </div>
           <div className="selector-buttons">
@@ -493,7 +536,9 @@ export default function MapaGoogle3DPro({
               onClick={() => setTipoRuta("cliente")}
               disabled={!repartidorPos}
             >
-              <span className="ruta-icon">🏠</span>
+              <span className="ruta-icon">
+                <FaHouse />
+              </span>
               <div className="ruta-info">
                 <span className="ruta-title">Ruta al Cliente</span>
                 <span className="ruta-desc">Punto de entrega</span>
@@ -504,7 +549,9 @@ export default function MapaGoogle3DPro({
               onClick={() => setTipoRuta("restaurante")}
               disabled={!repartidorPos || !restauranteLat || !restauranteLng}
             >
-              <span className="ruta-icon">🍽️</span>
+              <span className="ruta-icon">
+                <FaStore />
+              </span>
               <div className="ruta-info">
                 <span className="ruta-title">Ruta al Restaurante</span>
                 <span className="ruta-desc">Punto de recogida</span>
@@ -513,40 +560,24 @@ export default function MapaGoogle3DPro({
           </div>
         </div>
 
-        {/* Acciones Rápidas */}
-        <div className="controles-grupo">
-          <div className="grupo-header">
-            <span className="grupo-icon">⚡</span>
-            <h4>Acciones Rápidas</h4>
-          </div>
-          <div className="controles-grid">
-            <button
-              className="control-btn-nuevo special"
-              onClick={centrarEnRepartidor}
-              title="Centrar en repartidor"
-              disabled={!repartidorPos}
-            >
-              <span className="btn-icon">🎯</span>
-              <span className="btn-label">Centrar</span>
-            </button>
-            <button
-              className="control-btn-nuevo special"
-              onClick={cambiarVistaAerea}
-              title="Cambiar vista"
-            >
-              <span className="btn-icon">🛰️</span>
-              <span className="btn-label">Vista</span>
-            </button>
-            <button
-              className="control-btn-nuevo special"
-              onClick={toggleStreetView}
-              title="Street View"
-              disabled={!repartidorPos}
-            >
-              <span className="btn-icon">👁️</span>
-              <span className="btn-label">Street View</span>
-            </button>
-          </div>
+        <div className="controles-secundarios">
+          <button
+            className="control-chip"
+            onClick={cambiarVistaAerea}
+            title="Cambiar vista"
+          >
+            <FaSatelliteDish />
+            <span>Vista</span>
+          </button>
+          <button
+            className={`control-chip ${showStreetView ? "active" : ""}`}
+            onClick={toggleStreetView}
+            title="Street View"
+            disabled={!repartidorPos}
+          >
+            <FaStreetView />
+            <span>Street View</span>
+          </button>
         </div>
       </div>
     </div>

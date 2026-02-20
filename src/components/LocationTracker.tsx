@@ -2,23 +2,39 @@ import { useEffect, useRef } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
-// Envía la ubicación del repartidor a la tabla `ubicacion_real` cada 20 segundos
+// Envía la ubicación del repartidor a la tabla `ubicacion_real` cada 5 segundos
 export default function LocationTracker() {
   const { usuario } = useAuth();
   const intervalRef = useRef<number | null>(null);
+  const watchIdRef = useRef<number | null>(null);
+  const lastSentAtRef = useRef<number>(0);
+  const lastGoodAccuracyRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!usuario || usuario.tipo_usuario !== "repartidor") return;
 
     let mounted = true;
+    const SEND_INTERVAL_MS = 5_000;
 
     const sendPosition = async (position: GeolocationPosition) => {
       try {
+        const now = Date.now();
+        if (now - lastSentAtRef.current < SEND_INTERVAL_MS) return;
+
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
         const speed = position.coords.speed ?? null;
         const accuracy = position.coords.accuracy ?? null;
         const heading = position.coords.heading ?? null;
+
+        // Evitar degradar la posición con lecturas extremadamente imprecisas
+        if (accuracy && accuracy > 120 && lastGoodAccuracyRef.current !== null) {
+          return;
+        }
+
+        if (accuracy && accuracy <= 50) {
+          lastGoodAccuracyRef.current = accuracy;
+        }
 
         // Usar upsert con onConflict para evitar error 409 cuando ya existe una fila por usuario
         const payload = {
@@ -26,7 +42,7 @@ export default function LocationTracker() {
           latitud: lat,
           longitud: lng,
           velocidad: speed,
-          precision_metros: accuracy ? Math.round(accuracy) : null,
+          precision_metros: accuracy,
           heading: heading,
           actualizado_en: new Date().toISOString(),
         } as any;
@@ -37,7 +53,10 @@ export default function LocationTracker() {
 
         if (error) {
           console.error("Error enviando ubicación (upsert):", error);
+          return;
         }
+
+        lastSentAtRef.current = now;
       } catch (err) {
         console.error("Error enviando ubicación:", err);
       }
@@ -53,18 +72,45 @@ export default function LocationTracker() {
         (err) => {
           console.warn("Geolocation error:", err.message);
         },
-        { enableHighAccuracy: true, maximumAge: 0 }
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 0,
+        },
       );
     };
 
-    // enviar inmediatamente y luego cada 20s
+    const startWatch = () => {
+      if (!navigator.geolocation) return;
+
+      watchIdRef.current = navigator.geolocation.watchPosition(
+        (pos) => {
+          if (!mounted) return;
+          sendPosition(pos);
+        },
+        (err) => {
+          console.warn("Geolocation watch error:", err.message);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 0,
+        },
+      );
+    };
+
+    // Enviar inmediatamente, escuchar cambios y reforzar envío cada 5s
     requestAndSend();
-    intervalRef.current = window.setInterval(requestAndSend, 20_000);
+    startWatch();
+    intervalRef.current = window.setInterval(requestAndSend, SEND_INTERVAL_MS);
 
     return () => {
       mounted = false;
       if (intervalRef.current) {
         clearInterval(intervalRef.current as number);
+      }
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
   }, [usuario]);
