@@ -72,24 +72,134 @@ export async function cambiarDisponibilidad(
 // =====================================================
 
 export async function obtenerPedidosDisponibles() {
-  const { data, error } = await supabase
-    .from("vista_pedidos_disponibles_repartidores")
-    .select("*")
+  // Obtener pedidos con información del restaurante
+  const { data: pedidos, error } = await supabase
+    .from("pedidos")
+    .select(`
+      *,
+      restaurantes(nombre, direccion, emoji)
+    `)
+    .in("estado", ["listo", "confirmado"])
+    .is("repartidor_id", null)
     .order("creado_en", { ascending: true });
 
   if (error) throw error;
-  return data as PedidoDisponible[];
+  if (!pedidos || pedidos.length === 0) return [];
+
+  console.log("Pedidos disponibles obtenidos:", pedidos);
+
+  // Obtener los IDs únicos de usuarios
+  const usuarioIds = [...new Set(pedidos.map((p: any) => p.usuario_id).filter(Boolean))];
+  
+  console.log("IDs de usuarios a consultar:", usuarioIds);
+  
+  // Consultar información de usuarios
+  const { data: usuarios } = await supabase
+    .from("usuarios")
+    .select("id, nombre, telefono")
+    .in("id", usuarioIds);
+
+  console.log("Usuarios obtenidos:", usuarios);
+
+  // Crear un mapa de usuarios para acceso rápido
+  const usuariosMap = new Map();
+  (usuarios || []).forEach((u: any) => {
+    usuariosMap.set(u.id, u);
+  });
+  
+  // Transformar los datos al formato esperado
+  const pedidosDisponibles = pedidos.map((p: any) => {
+    const usuario = usuariosMap.get(p.usuario_id);
+    console.log(`Pedido ${p.id}: usuario_id=${p.usuario_id}, usuario encontrado:`, usuario);
+    return {
+      pedido_id: p.id,
+      numero_pedido: p.numero_pedido,
+      total: p.total,
+      estado: p.estado,
+      direccion_entrega: p.direccion_entrega,
+      latitud: p.latitud,
+      longitud: p.longitud,
+      creado_en: p.creado_en,
+      restaurante_nombre: p.restaurantes?.nombre || "",
+      restaurante_direccion: p.restaurantes?.direccion || "",
+      restaurante_emoji: p.restaurantes?.emoji || "",
+      cliente_nombre: usuario?.nombre || "",
+      cliente_telefono: usuario?.telefono || "",
+      total_items: 0,
+      minutos_desde_creacion: Math.floor((Date.now() - new Date(p.creado_en).getTime()) / 60000),
+    };
+  });
+
+  console.log("Pedidos disponibles transformados:", pedidosDisponibles);
+  return pedidosDisponibles as PedidoDisponible[];
 }
 
 export async function obtenerMisPedidos(usuarioId: string) {
-  const { data, error } = await supabase
-    .from("vista_pedidos_repartidor")
-    .select("*")
+  // Obtener pedidos con información del restaurante
+  const { data: pedidos, error } = await supabase
+    .from("pedidos")
+    .select(`
+      *,
+      restaurantes(nombre, direccion, emoji, telefono)
+    `)
     .eq("repartidor_id", usuarioId)
+    .in("estado", ["en_camino", "listo"])
     .order("asignado_en", { ascending: true });
 
   if (error) throw error;
-  return data as PedidoRepartidor[];
+  if (!pedidos || pedidos.length === 0) return [];
+
+  console.log("Mis pedidos obtenidos:", pedidos);
+
+  // Obtener los IDs únicos de usuarios
+  const usuarioIds = [...new Set(pedidos.map((p: any) => p.usuario_id).filter(Boolean))];
+  
+  console.log("IDs de usuarios clientes a consultar:", usuarioIds);
+  
+  // Consultar información de usuarios
+  const { data: usuarios } = await supabase
+    .from("usuarios")
+    .select("id, nombre, telefono")
+    .in("id", usuarioIds);
+
+  console.log("Usuarios clientes obtenidos:", usuarios);
+
+  // Crear un mapa de usuarios para acceso rápido
+  const usuariosMap = new Map();
+  (usuarios || []).forEach((u: any) => {
+    usuariosMap.set(u.id, u);
+  });
+  
+  // Transformar los datos al formato esperado
+  const misPedidos = pedidos.map((p: any) => {
+    const usuario = usuariosMap.get(p.usuario_id);
+    console.log(`Mi pedido ${p.id}: usuario_id=${p.usuario_id}, usuario encontrado:`, usuario);
+    return {
+      pedido_id: p.id,
+      repartidor_id: p.repartidor_id,
+      numero_pedido: p.numero_pedido,
+      total: p.total,
+      estado: p.estado,
+      direccion_entrega: p.direccion_entrega,
+      latitud: p.latitud,
+      longitud: p.longitud,
+      notas_cliente: p.notas_cliente,
+      creado_en: p.creado_en,
+      asignado_en: p.asignado_en,
+      restaurante_nombre: p.restaurantes?.nombre || "",
+      restaurante_direccion: p.restaurantes?.direccion || "",
+      restaurante_emoji: p.restaurantes?.emoji || "",
+      restaurante_telefono: p.restaurantes?.telefono || "",
+      cliente_email: "",
+      cliente_nombre: usuario?.nombre || "",
+      cliente_telefono: usuario?.telefono || "",
+      total_items: 0,
+      minutos_desde_asignacion: p.asignado_en ? Math.floor((Date.now() - new Date(p.asignado_en).getTime()) / 60000) : 0,
+    };
+  });
+
+  console.log("Mis pedidos transformados:", misPedidos);
+  return misPedidos as PedidoRepartidor[];
 }
 
 export async function obtenerPedidosRealizadosRepartidor(repartidorId: string) {
@@ -116,6 +226,7 @@ export async function tomarPedido(pedidoId: string, repartidorId: string) {
 export async function marcarPedidoEntregado(
   pedidoId: string,
   repartidorId: string,
+  costoEnvio?: number,
 ) {
   try {
     console.log("marcarPedidoEntregado: llamando RPC", {
@@ -133,6 +244,14 @@ export async function marcarPedidoEntregado(
     if (error) {
       console.error("marcarPedidoEntregado: error RPC", error);
       throw error;
+    }
+
+    // Actualizar la columna total con el valor de costo_envio (ganancia del repartidor)
+    if (costoEnvio !== undefined) {
+      await supabase
+        .from("pedidos_realizados_de_repartidor")
+        .update({ total: costoEnvio })
+        .eq("pedido_id", pedidoId);
     }
 
     console.log("marcarPedidoEntregado: resultado", data);

@@ -37,6 +37,8 @@ export interface PedidoRepartidor {
   restaurante_emoji: string;
   restaurante_telefono: string;
   cliente_email: string;
+  cliente_nombre: string;
+  cliente_telefono: string;
   total_items: number;
   minutos_desde_asignacion: number;
 }
@@ -53,6 +55,8 @@ export interface PedidoDisponible {
   restaurante_nombre: string;
   restaurante_direccion: string;
   restaurante_emoji: string;
+  cliente_nombre: string;
+  cliente_telefono: string;
   total_items: number;
   minutos_desde_creacion: number;
 }

@@ -117,6 +117,25 @@ export default function MisPedidos() {
                     </div>
                   </div>
 
+                  {pedido.cliente_telefono && (
+                    <div className="flex items-start space-x-2 mb-3">
+                      <span className="text-gray-500">📞</span>
+                      <div>
+                        <p className="text-sm font-medium">Cliente:</p>
+                        <a
+                          href={`tel:${pedido.cliente_telefono}`}
+                          className="text-indigo-600 hover:text-indigo-800 font-semibold"
+                        >
+                          {pedido.cliente_nombre}
+                          <br />
+                          <span className="text-green-600">
+                            {pedido.cliente_telefono}
+                          </span>
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
                   {pedido.notas_cliente && (
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-3">
                       <p className="text-sm font-medium text-yellow-800 mb-1">

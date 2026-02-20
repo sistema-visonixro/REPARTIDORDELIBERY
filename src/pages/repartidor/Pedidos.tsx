@@ -18,6 +18,8 @@ type Pedido = {
   repartidor_id?: string;
   notas_cliente?: string | null;
   tipo_pago?: string;
+  cliente_nombre?: string;
+  cliente_telefono?: string;
 };
 
 export default function Pedidos({
@@ -62,10 +64,42 @@ export default function Pedidos({
         });
 
         if (error) throw error;
+        const fetched = (data as any[]) || [];
+        
+        // Obtener IDs únicos de usuarios
+        const usuarioIds = [...new Set(fetched.map((p: any) => p.usuario_id).filter(Boolean))];
+        
+        console.log("Pedidos obtenidos:", fetched.length);
+        console.log("Usuario IDs para consultar:", usuarioIds);
+        
+        // Consultar información de usuarios si hay pedidos
+        let usuariosMap = new Map();
+        if (usuarioIds.length > 0) {
+          const { data: usuarios } = await supabase
+            .from("usuarios")
+            .select("id, nombre, telefono")
+            .in("id", usuarioIds);
+          
+          console.log("Usuarios obtenidos:", usuarios);
+          
+          (usuarios || []).forEach((u: any) => {
+            usuariosMap.set(u.id, u);
+          });
+        }
+        
+        // Combinar datos de pedidos con usuarios
+        const pedidosConUsuarios = fetched.map((p: any) => {
+          const usuario = usuariosMap.get(p.usuario_id);
+          console.log(`Pedido ${p.id}: usuario_id=${p.usuario_id}, usuario=`, usuario);
+          return {
+            ...p,
+            cliente_nombre: usuario?.nombre || "",
+            cliente_telefono: usuario?.telefono || "",
+          };
+        });
+        
         // Filtrar pedidos con estado 'entregado' como medida de seguridad
-        const fetched = (data as Pedido[]) || [];
-        // Normalizar y filtrar cualquier variante de 'entregado' (mayúsculas/espacios)
-        const visible = fetched.filter(
+        const visible = pedidosConUsuarios.filter(
           (p) =>
             (p.estado || "").toString().toLowerCase().trim() !== "entregado",
         );
@@ -136,7 +170,7 @@ export default function Pedidos({
     }
   };
 
-  const handleMarkDelivered = async (pedidoId: string) => {
+  const handleMarkDelivered = async (pedidoId: string, costoEnvio?: number) => {
     if (!usuario) return;
     try {
       console.log("handleMarkDelivered: inicio", {
@@ -144,7 +178,11 @@ export default function Pedidos({
         usuarioId: usuario.id,
       });
       setDelivering((s) => ({ ...s, [pedidoId]: true }));
-      const data = await marcarPedidoEntregado(pedidoId, usuario.id);
+      const data = await marcarPedidoEntregado(
+        pedidoId,
+        usuario.id,
+        costoEnvio,
+      );
       console.log("handleMarkDelivered: resultado service", data);
       if (!data) {
         alert(
@@ -173,6 +211,16 @@ export default function Pedidos({
         const rest: any = (p as any).restaurantes;
         const nombreRest = rest?.nombre || p.restaurante || "-";
         const direccionRest = rest?.direccion || "-";
+        const clienteNombre = p.cliente_nombre || "Cliente";
+        const clienteTelefono = p.cliente_telefono || null;
+        
+        console.log("Renderizando pedido:", {
+          id: p.id,
+          usuario_id: (p as any).usuario_id,
+          cliente_nombre: clienteNombre,
+          cliente_telefono: clienteTelefono,
+        });
+        
         return (
           <div key={p.id} className="order-item">
             <div className="order-info">
@@ -286,6 +334,51 @@ export default function Pedidos({
                   {p.tipo_pago || "Efectivo"}
                 </p>
               </div>
+
+              {/* Mostrar siempre para debugging */}
+              <div style={{ fontSize: "1.2rem" }}>📞</div>
+              <div>
+                <p
+                  style={{
+                    fontSize: "0.75rem",
+                    color: "var(--text-dim)",
+                    margin: 0,
+                    marginBottom: 4,
+                  }}
+                >
+                  Cliente
+                </p>
+                {clienteTelefono ? (
+                  <a
+                    href={`tel:${clienteTelefono}`}
+                    style={{
+                      fontSize: "0.95rem",
+                      fontWeight: 600,
+                      color: "var(--accent)",
+                      textDecoration: "none",
+                      display: "block",
+                    }}
+                  >
+                    {clienteNombre}
+                    <br />
+                    <span style={{ color: "#10b981" }}>{clienteTelefono}</span>
+                  </a>
+                ) : (
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--text-dim)",
+                      margin: 0,
+                    }}
+                  >
+                    {clienteNombre || "Sin información"}
+                    <br />
+                    <span style={{ fontSize: "0.75rem", color: "red" }}>
+                      Sin teléfono
+                    </span>
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="route-visual">
@@ -389,7 +482,7 @@ export default function Pedidos({
                 p.estado === "en_camino" && (
                   <button
                     className="btn-accept bg-green-600 hover:bg-green-700"
-                    onClick={() => handleMarkDelivered(p.id)}
+                    onClick={() => handleMarkDelivered(p.id, p.costo_envio)}
                     disabled={delivering[p.id]}
                   >
                     {delivering[p.id] ? "..." : "ENTREGADO"}
