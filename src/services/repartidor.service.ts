@@ -75,10 +75,12 @@ export async function obtenerPedidosDisponibles() {
   // Obtener pedidos con información del restaurante
   const { data: pedidos, error } = await supabase
     .from("pedidos")
-    .select(`
+    .select(
+      `
       *,
       restaurantes(nombre, direccion, emoji)
-    `)
+    `,
+    )
     .in("estado", ["listo", "confirmado"])
     .is("repartidor_id", null)
     .order("creado_en", { ascending: true });
@@ -89,10 +91,12 @@ export async function obtenerPedidosDisponibles() {
   console.log("Pedidos disponibles obtenidos:", pedidos);
 
   // Obtener los IDs únicos de usuarios
-  const usuarioIds = [...new Set(pedidos.map((p: any) => p.usuario_id).filter(Boolean))];
-  
+  const usuarioIds = [
+    ...new Set(pedidos.map((p: any) => p.usuario_id).filter(Boolean)),
+  ];
+
   console.log("IDs de usuarios a consultar:", usuarioIds);
-  
+
   // Consultar información de usuarios
   const { data: usuarios } = await supabase
     .from("usuarios")
@@ -106,11 +110,14 @@ export async function obtenerPedidosDisponibles() {
   (usuarios || []).forEach((u: any) => {
     usuariosMap.set(u.id, u);
   });
-  
+
   // Transformar los datos al formato esperado
   const pedidosDisponibles = pedidos.map((p: any) => {
     const usuario = usuariosMap.get(p.usuario_id);
-    console.log(`Pedido ${p.id}: usuario_id=${p.usuario_id}, usuario encontrado:`, usuario);
+    console.log(
+      `Pedido ${p.id}: usuario_id=${p.usuario_id}, usuario encontrado:`,
+      usuario,
+    );
     return {
       pedido_id: p.id,
       numero_pedido: p.numero_pedido,
@@ -126,7 +133,9 @@ export async function obtenerPedidosDisponibles() {
       cliente_nombre: usuario?.nombre || "",
       cliente_telefono: usuario?.telefono || "",
       total_items: 0,
-      minutos_desde_creacion: Math.floor((Date.now() - new Date(p.creado_en).getTime()) / 60000),
+      minutos_desde_creacion: Math.floor(
+        (Date.now() - new Date(p.creado_en).getTime()) / 60000,
+      ),
     };
   });
 
@@ -138,10 +147,12 @@ export async function obtenerMisPedidos(usuarioId: string) {
   // Obtener pedidos con información del restaurante
   const { data: pedidos, error } = await supabase
     .from("pedidos")
-    .select(`
+    .select(
+      `
       *,
       restaurantes(nombre, direccion, emoji, telefono)
-    `)
+    `,
+    )
     .eq("repartidor_id", usuarioId)
     .in("estado", ["en_camino", "listo"])
     .order("asignado_en", { ascending: true });
@@ -152,10 +163,12 @@ export async function obtenerMisPedidos(usuarioId: string) {
   console.log("Mis pedidos obtenidos:", pedidos);
 
   // Obtener los IDs únicos de usuarios
-  const usuarioIds = [...new Set(pedidos.map((p: any) => p.usuario_id).filter(Boolean))];
-  
+  const usuarioIds = [
+    ...new Set(pedidos.map((p: any) => p.usuario_id).filter(Boolean)),
+  ];
+
   console.log("IDs de usuarios clientes a consultar:", usuarioIds);
-  
+
   // Consultar información de usuarios
   const { data: usuarios } = await supabase
     .from("usuarios")
@@ -169,11 +182,14 @@ export async function obtenerMisPedidos(usuarioId: string) {
   (usuarios || []).forEach((u: any) => {
     usuariosMap.set(u.id, u);
   });
-  
+
   // Transformar los datos al formato esperado
   const misPedidos = pedidos.map((p: any) => {
     const usuario = usuariosMap.get(p.usuario_id);
-    console.log(`Mi pedido ${p.id}: usuario_id=${p.usuario_id}, usuario encontrado:`, usuario);
+    console.log(
+      `Mi pedido ${p.id}: usuario_id=${p.usuario_id}, usuario encontrado:`,
+      usuario,
+    );
     return {
       pedido_id: p.id,
       repartidor_id: p.repartidor_id,
@@ -194,7 +210,9 @@ export async function obtenerMisPedidos(usuarioId: string) {
       cliente_nombre: usuario?.nombre || "",
       cliente_telefono: usuario?.telefono || "",
       total_items: 0,
-      minutos_desde_asignacion: p.asignado_en ? Math.floor((Date.now() - new Date(p.asignado_en).getTime()) / 60000) : 0,
+      minutos_desde_asignacion: p.asignado_en
+        ? Math.floor((Date.now() - new Date(p.asignado_en).getTime()) / 60000)
+        : 0,
     };
   });
 
@@ -308,7 +326,7 @@ export async function obtenerUbicacionPedido(pedidoId: string) {
 export function iniciarTrackingGPS(
   repartidorId: string,
   pedidoId: string,
-  intervaloSegundos: number = 60,
+  intervaloSegundos: number = 5,
 ): () => void {
   let watchId: number | null = null;
   let intervalId: number | null = null;

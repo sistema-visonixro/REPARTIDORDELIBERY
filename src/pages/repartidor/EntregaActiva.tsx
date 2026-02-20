@@ -67,7 +67,7 @@ export default function EntregaActiva() {
     if (!pedidoId || trackingActivo) return;
 
     console.log("Iniciando tracking GPS...");
-    const detener = iniciarTrackingGPS(repartidorId, pedidoId, 60); // Actualizar cada 60 segundos
+    const detener = iniciarTrackingGPS(repartidorId, pedidoId, 5); // Actualizar cada 5 segundos
     detenerTrackingRef.current = detener;
     setTrackingActivo(true);
   };
@@ -152,8 +152,8 @@ export default function EntregaActiva() {
           <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
             <div className="flex items-center space-x-2">
               <span className="animate-pulse text-green-600">●</span>
-              <p className="text-green-700 text-sm font-medium">
-                📡 Tracking GPS activo - Tu ubicación se actualiza cada minuto
+                <p className="text-green-700 text-sm font-medium">
+                📡 Tracking GPS activo - Tu ubicación se actualiza cada 5 segundos
               </p>
             </div>
           </div>
