@@ -184,7 +184,7 @@ export default function Login() {
                   position: "absolute",
                   inset: 0,
                   background:
-                    "linear-gradient(135deg, #a855f7 0%, #ec4899 100%)",
+                    "linear-gradient(135deg, #19181a 0%, #ec4899 100%)",
                   borderRadius: "16px",
                   filter: "blur(12px)",
                   opacity: 0.7,
@@ -223,7 +223,7 @@ export default function Login() {
                   fontWeight: 500,
                 }}
               >
-                ✨ Bienvenido de vuelta
+                
               </p>
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function Login() {
                   marginBottom: "6px",
                 }}
               >
-                📧 Email
+               Codigo de Driver
               </label>
               <input
                 id="codigo"
@@ -322,7 +322,7 @@ export default function Login() {
                   marginBottom: "6px",
                 }}
               >
-                🔒 Contraseña
+                Clave
               </label>
               <input
                 id="clave"

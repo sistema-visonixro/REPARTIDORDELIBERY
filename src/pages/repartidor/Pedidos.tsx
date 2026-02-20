@@ -65,13 +65,15 @@ export default function Pedidos({
 
         if (error) throw error;
         const fetched = (data as any[]) || [];
-        
+
         // Obtener IDs únicos de usuarios
-        const usuarioIds = [...new Set(fetched.map((p: any) => p.usuario_id).filter(Boolean))];
-        
+        const usuarioIds = [
+          ...new Set(fetched.map((p: any) => p.usuario_id).filter(Boolean)),
+        ];
+
         console.log("Pedidos obtenidos:", fetched.length);
         console.log("Usuario IDs para consultar:", usuarioIds);
-        
+
         // Consultar información de usuarios si hay pedidos
         let usuariosMap = new Map();
         if (usuarioIds.length > 0) {
@@ -79,25 +81,28 @@ export default function Pedidos({
             .from("usuarios")
             .select("id, nombre, telefono")
             .in("id", usuarioIds);
-          
+
           console.log("Usuarios obtenidos:", usuarios);
-          
+
           (usuarios || []).forEach((u: any) => {
             usuariosMap.set(u.id, u);
           });
         }
-        
+
         // Combinar datos de pedidos con usuarios
         const pedidosConUsuarios = fetched.map((p: any) => {
           const usuario = usuariosMap.get(p.usuario_id);
-          console.log(`Pedido ${p.id}: usuario_id=${p.usuario_id}, usuario=`, usuario);
+          console.log(
+            `Pedido ${p.id}: usuario_id=${p.usuario_id}, usuario=`,
+            usuario,
+          );
           return {
             ...p,
             cliente_nombre: usuario?.nombre || "",
             cliente_telefono: usuario?.telefono || "",
           };
         });
-        
+
         // Filtrar pedidos con estado 'entregado' como medida de seguridad
         const visible = pedidosConUsuarios.filter(
           (p) =>
@@ -213,14 +218,14 @@ export default function Pedidos({
         const direccionRest = rest?.direccion || "-";
         const clienteNombre = p.cliente_nombre || "Cliente";
         const clienteTelefono = p.cliente_telefono || null;
-        
+
         console.log("Renderizando pedido:", {
           id: p.id,
           usuario_id: (p as any).usuario_id,
           cliente_nombre: clienteNombre,
           cliente_telefono: clienteTelefono,
         });
-        
+
         return (
           <div key={p.id} className="order-item">
             <div className="order-info">
