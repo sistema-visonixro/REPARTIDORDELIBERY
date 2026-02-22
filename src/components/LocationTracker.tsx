@@ -16,10 +16,17 @@ export default function LocationTracker() {
     let mounted = true;
     const SEND_INTERVAL_MS = 5_000;
 
-    const sendPosition = async (position: GeolocationPosition) => {
+    const sendPosition = async (
+      position: GeolocationPosition,
+      forceUpdate = false,
+    ) => {
       try {
         const now = Date.now();
-        if (now - lastSentAtRef.current < SEND_INTERVAL_MS) return;
+
+        // Solo verificar el intervalo si no es una actualización forzada
+        if (!forceUpdate && now - lastSentAtRef.current < SEND_INTERVAL_MS) {
+          return;
+        }
 
         const lat = position.coords.latitude;
         const lng = position.coords.longitude;
@@ -28,7 +35,12 @@ export default function LocationTracker() {
         const heading = position.coords.heading ?? null;
 
         // Evitar degradar la posición con lecturas extremadamente imprecisas
-        if (accuracy && accuracy > 120 && lastGoodAccuracyRef.current !== null) {
+        if (
+          accuracy &&
+          accuracy > 120 &&
+          lastGoodAccuracyRef.current !== null &&
+          !forceUpdate
+        ) {
           return;
         }
 
@@ -57,17 +69,18 @@ export default function LocationTracker() {
         }
 
         lastSentAtRef.current = now;
+        console.log("✅ Ubicación actualizada correctamente");
       } catch (err) {
         console.error("Error enviando ubicación:", err);
       }
     };
 
-    const requestAndSend = () => {
+    const requestAndSend = (forceUpdate = false) => {
       if (!navigator.geolocation) return;
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           if (!mounted) return;
-          sendPosition(pos);
+          sendPosition(pos, forceUpdate);
         },
         (err) => {
           console.warn("Geolocation error:", err.message);
@@ -100,9 +113,11 @@ export default function LocationTracker() {
     };
 
     // Enviar inmediatamente, escuchar cambios y reforzar envío cada 5s
-    requestAndSend();
+    requestAndSend(true); // Forzar el primer envío
     startWatch();
-    intervalRef.current = window.setInterval(requestAndSend, SEND_INTERVAL_MS);
+    intervalRef.current = window.setInterval(() => {
+      requestAndSend(true); // Forzar actualización cada 5 segundos
+    }, SEND_INTERVAL_MS);
 
     return () => {
       mounted = false;
