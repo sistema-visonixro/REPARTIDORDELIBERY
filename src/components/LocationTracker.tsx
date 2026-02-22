@@ -54,7 +54,8 @@ export default function LocationTracker() {
           latitud: lat,
           longitud: lng,
           velocidad: speed,
-          precision_metros: accuracy,
+          // La columna `precision_metros` es INTEGER en la BD; enviar entero
+          precision_metros: accuracy != null ? Math.round(accuracy) : null,
           heading: heading,
           actualizado_en: new Date().toISOString(),
         } as any;
